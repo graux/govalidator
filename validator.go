@@ -11,6 +11,7 @@ import (
 	"fmt"
 	"io/ioutil"
 	"net"
+	"net/http"
 	"net/url"
 	"reflect"
 	"regexp"
@@ -323,12 +324,12 @@ func IsNull(str string) bool {
 
 // HasWhitespaceOnly checks the string only contains whitespace
 func HasWhitespaceOnly(str string) bool {
-    return len(str) > 0 && rxHasWhitespaceOnly.MatchString(str)
+	return len(str) > 0 && rxHasWhitespaceOnly.MatchString(str)
 }
 
 // HasWhitespace checks if the string contains any whitespace
 func HasWhitespace(str string) bool {
-    return len(str) > 0 && rxHasWhitespace.MatchString(str)
+	return len(str) > 0 && rxHasWhitespace.MatchString(str)
 }
 
 // IsByteLength check if the string's length (in bytes) falls in a range.
@@ -736,6 +737,12 @@ func PrependPathToErrors(err error, path string) error {
 // ValidateStruct use tags for fields.
 // result will be equal to `false` if there are any errors.
 func ValidateStruct(s interface{}) (bool, error) {
+	return ValidateRequestStruct(s, nil)
+}
+
+// ValidateStruct use tags for fields.
+// result will be equal to `false` if there are any errors.
+func ValidateRequestStruct(s interface{}, r *http.Request) (bool, error) {
 	if s == nil {
 		return true, nil
 	}
@@ -770,7 +777,7 @@ func ValidateStruct(s interface{}) (bool, error) {
 				errs = append(errs, err)
 			}
 		}
-		resultField, err2 := typeCheck(valueField, typeField, val, nil)
+		resultField, err2 := typeCheck(valueField, typeField, val, nil, r)
 		if err2 != nil {
 
 			// Replace structure name with JSON name if there is a tag on the variable
@@ -988,7 +995,7 @@ func checkRequired(v reflect.Value, t reflect.StructField, options tagOptionsMap
 	return true, nil
 }
 
-func typeCheck(v reflect.Value, t reflect.StructField, o reflect.Value, options tagOptionsMap) (isValid bool, resultErr error) {
+func typeCheck(v reflect.Value, t reflect.StructField, o reflect.Value, options tagOptionsMap, r *http.Request) (isValid bool, resultErr error) {
 	if !v.IsValid() {
 		return false, nil
 	}
@@ -1030,7 +1037,7 @@ func typeCheck(v reflect.Value, t reflect.StructField, o reflect.Value, options 
 		if validatefunc, ok := CustomTypeTagMap.Get(validatorName); ok {
 			delete(options, validatorName)
 
-			if result := validatefunc(v.Interface(), o.Interface()); !result {
+			if result := validatefunc(v.Interface(), o.Interface(), r); !result {
 				if len(validatorStruct.customErrorMessage) > 0 {
 					customTypeErrors = append(customTypeErrors, Error{Name: t.Name, Err: TruncatingErrorf(validatorStruct.customErrorMessage, fmt.Sprint(v), validatorName), CustomErrorMessageExists: true, Validator: stripParams(validatorName)})
 					continue
@@ -1121,10 +1128,10 @@ func typeCheck(v reflect.Value, t reflect.StructField, o reflect.Value, options 
 				delete(options, validatorSpec)
 
 				switch v.Kind() {
-                case reflect.String,
-                    reflect.Int, reflect.Int8, reflect.Int16, reflect.Int32, reflect.Int64,
-                    reflect.Uint, reflect.Uint8, reflect.Uint16, reflect.Uint32, reflect.Uint64,
-                    reflect.Float32, reflect.Float64:
+				case reflect.String,
+					reflect.Int, reflect.Int8, reflect.Int16, reflect.Int32, reflect.Int64,
+					reflect.Uint, reflect.Uint8, reflect.Uint16, reflect.Uint32, reflect.Uint64,
+					reflect.Float32, reflect.Float64:
 					field := fmt.Sprint(v) // make value into string, then validate with regex
 					if result := validatefunc(field); !result && !negate || result && negate {
 						if customMsgExists {
@@ -1155,7 +1162,7 @@ func typeCheck(v reflect.Value, t reflect.StructField, o reflect.Value, options 
 			var resultItem bool
 			var err error
 			if v.MapIndex(k).Kind() != reflect.Struct {
-				resultItem, err = typeCheck(v.MapIndex(k), t, o, options)
+				resultItem, err = typeCheck(v.MapIndex(k), t, o, options, r)
 				if err != nil {
 					return false, err
 				}
@@ -1175,7 +1182,7 @@ func typeCheck(v reflect.Value, t reflect.StructField, o reflect.Value, options 
 			var resultItem bool
 			var err error
 			if v.Index(i).Kind() != reflect.Struct {
-				resultItem, err = typeCheck(v.Index(i), t, o, options)
+				resultItem, err = typeCheck(v.Index(i), t, o, options, r)
 				if err != nil {
 					return false, err
 				}
@@ -1200,7 +1207,7 @@ func typeCheck(v reflect.Value, t reflect.StructField, o reflect.Value, options 
 		if v.IsNil() {
 			return true, nil
 		}
-		return typeCheck(v.Elem(), t, o, options)
+		return typeCheck(v.Elem(), t, o, options, r)
 	case reflect.Struct:
 		return ValidateStruct(v.Interface())
 	default:

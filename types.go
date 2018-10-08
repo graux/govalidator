@@ -1,6 +1,7 @@
 package govalidator
 
 import (
+	"net/http"
 	"reflect"
 	"regexp"
 	"sort"
@@ -12,7 +13,8 @@ type Validator func(str string) bool
 
 // CustomTypeValidator is a wrapper for validator functions that returns bool and accepts any type.
 // The second parameter should be the context (in the case of validating a struct: the whole object being validated).
-type CustomTypeValidator func(i interface{}, o interface{}) bool
+// Third param is the HTTP request, if any related to this request
+type CustomTypeValidator func(i interface{}, o interface{}, r *http.Request) bool
 
 // ParamValidator is a wrapper for validator functions that accepts additional parameters.
 type ParamValidator func(str string, params ...string) bool
