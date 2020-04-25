@@ -1,3 +1,3 @@
-module github.com/asaskevich/govalidator
+module github.com/graux/govalidator
 
 go 1.12

@@ -3,7 +3,7 @@ jobs:
   build:
     docker:
       - image: circleci/golang:1.9
-    working_directory: /go/src/github.com/asaskevich/govalidator
+    working_directory: /go/src/github.com/graux/govalidator
     steps:
       - checkout
       - run: diff -u /dev/null <(gofmt -d .)

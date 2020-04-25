@@ -1,7 +1,6 @@
 package govalidator
 
 import (
-	"net/http"
 	"reflect"
 	"regexp"
 	"sort"
@@ -14,7 +13,7 @@ type Validator func(str string) bool
 // CustomTypeValidator is a wrapper for validator functions that returns bool and accepts any type.
 // The second parameter should be the context (in the case of validating a struct: the whole object being validated).
 // Third param is the HTTP request, if any related to this request
-type CustomTypeValidator func(i interface{}, o interface{}, r *http.Request) bool
+type CustomTypeValidator func(params *CustomValidatorParams) bool
 
 // ParamValidator is a wrapper for validator functions that accepts additional parameters.
 type ParamValidator func(str string, params ...string) bool
@@ -74,13 +73,13 @@ var ParamTagMap = map[string]ParamValidator{
 
 // ParamTagRegexMap maps param tags to their respective regexes.
 var ParamTagRegexMap = map[string]*regexp.Regexp{
-	"range":        regexp.MustCompile("^range\\((\\d+)\\|(\\d+)\\)$"),
-	"length":       regexp.MustCompile("^length\\((\\d+)\\|(\\d+)\\)$"),
-	"runelength":   regexp.MustCompile("^runelength\\((\\d+)\\|(\\d+)\\)$"),
-	"stringlength": regexp.MustCompile("^stringlength\\((\\d+)\\|(\\d+)\\)$"),
-	"in":           regexp.MustCompile(`^in\((.*)\)`),
-	"matches":      regexp.MustCompile(`^matches\((.+)\)$`),
-	"rsapub":       regexp.MustCompile("^rsapub\\((\\d+)\\)$"),
+	"range":           regexp.MustCompile("^range\\((\\d+)\\|(\\d+)\\)$"),
+	"length":          regexp.MustCompile("^length\\((\\d+)\\|(\\d+)\\)$"),
+	"runelength":      regexp.MustCompile("^runelength\\((\\d+)\\|(\\d+)\\)$"),
+	"stringlength":    regexp.MustCompile("^stringlength\\((\\d+)\\|(\\d+)\\)$"),
+	"in":              regexp.MustCompile(`^in\((.*)\)`),
+	"matches":         regexp.MustCompile(`^matches\((.+)\)$`),
+	"rsapub":          regexp.MustCompile("^rsapub\\((\\d+)\\)$"),
 	"minstringlength": regexp.MustCompile("^minstringlength\\((\\d+)\\)$"),
 	"maxstringlength": regexp.MustCompile("^maxstringlength\\((\\d+)\\)$"),
 }
@@ -651,4 +650,80 @@ var ISO693List = []ISO693Entry{
 	{Alpha3bCode: "yor", Alpha2Code: "yo", English: "Yoruba"},
 	{Alpha3bCode: "zha", Alpha2Code: "za", English: "Zhuang; Chuang"},
 	{Alpha3bCode: "zul", Alpha2Code: "zu", English: "Zulu"},
+}
+
+type CustomValidatorParams struct {
+	Field   string
+	Value   interface{}
+	Context interface{}
+	Extra   interface{}
+}
+
+func NewCustomValidatorParams(field string, value interface{}, context interface{}, extra interface{}) *CustomValidatorParams {
+	return &CustomValidatorParams{Field: field, Value: value, Context: context, Extra: extra}
+}
+
+func (cvp CustomValidatorParams) GetValueString() (strPtr *string) {
+	switch cvp.Value.(type) {
+	case string:
+		str := cvp.Value.(string)
+		if len(str) > 0 {
+			strPtr = &str
+		}
+	case *string:
+		if strPtr = cvp.Value.(*string); strPtr != nil && len(*strPtr) == 0 {
+			strPtr = nil
+		}
+	}
+	return
+}
+
+func (cvp CustomValidatorParams) GetValueInt() (intPtr *int) {
+	switch cvp.Value.(type) {
+	case int:
+		newInt := cvp.Value.(int)
+		intPtr = &newInt
+	case *int:
+		intPtr = cvp.Value.(*int)
+	}
+	return
+}
+
+func (cvp CustomValidatorParams) GetValueFloat() (floatPtr *float64) {
+	switch cvp.Value.(type) {
+	case float64:
+		newFloat := cvp.Value.(float64)
+		floatPtr = &newFloat
+	case *float64:
+		floatPtr = cvp.Value.(*float64)
+	case float32:
+		newFloat := float64(cvp.Value.(float32))
+		floatPtr = &newFloat
+	case *float32:
+		floatPtr32 := cvp.Value.(*float32)
+		if floatPtr32 != nil {
+			newFloat := float64(*floatPtr32)
+			floatPtr = &newFloat
+		}
+	}
+	return
+}
+
+func (cvp CustomValidatorParams) GetValueStringSlice() (strPtr []string) {
+	if strSlice, ok := cvp.Value.([]string); ok {
+		return strSlice
+	}
+	return nil
+}
+
+func (cvp CustomValidatorParams) GetExtraString() string {
+	switch cvp.Extra.(type) {
+	case string:
+		return cvp.Extra.(string)
+	case *string:
+		if strPtr := cvp.Extra.(*string); strPtr != nil {
+			return *strPtr
+		}
+	}
+	return ""
 }

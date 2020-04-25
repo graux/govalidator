@@ -11,7 +11,6 @@ import (
 	"fmt"
 	"io/ioutil"
 	"net"
-	"net/http"
 	"net/url"
 	"reflect"
 	"regexp"
@@ -806,12 +805,15 @@ func PrependPathToErrors(err error, path string) error {
 	}
 	return err
 }
+func ValidateMap(s map[string]interface{}, m map[string]interface{}) (bool, error) {
+	return ValidateMapExtra(s, m, nil)
+}
 
 // ValidateMap use validation map for fields.
 // result will be equal to `false` if there are any errors.
 // m is the validation map in the form
 // map[string]interface{}{"name":"required,alpha","address":map[string]interface{}{"line1":"required,alphanum"}}
-func ValidateMap(s map[string]interface{}, m map[string]interface{}) (bool, error) {
+func ValidateMapExtra(s map[string]interface{}, m map[string]interface{}, extra interface{}) (bool, error) {
 	if s == nil {
 		return true, nil
 	}
@@ -844,7 +846,7 @@ func ValidateMap(s map[string]interface{}, m map[string]interface{}) (bool, erro
 				err = PrependPathToErrors(err, key)
 				errs = append(errs, err)
 			} else {
-				mapResult, err = ValidateMap(v, subValidator)
+				mapResult, err = ValidateMapExtra(v, subValidator, extra)
 				if err != nil {
 					mapResult = false
 					err = PrependPathToErrors(err, key)
@@ -870,7 +872,7 @@ func ValidateMap(s map[string]interface{}, m map[string]interface{}) (bool, erro
 				Offset:    0,
 				Index:     []int{index},
 				Anonymous: false,
-			}, val, nil)
+			}, val, nil, extra)
 			if err != nil {
 				errs = append(errs, err)
 			}
@@ -914,12 +916,12 @@ func ValidateMap(s map[string]interface{}, m map[string]interface{}) (bool, erro
 // result will be equal to `false` if there are any errors.
 // todo currently there is no guarantee that errors will be returned in predictable order (tests may to fail)
 func ValidateStruct(s interface{}) (bool, error) {
-	return ValidateRequestStruct(s, nil)
+	return ValidateStructExtra(s, nil)
 }
 
 // ValidateStruct use tags for fields.
 // result will be equal to `false` if there are any errors.
-func ValidateRequestStruct(s interface{}, r *http.Request) (bool, error) {
+func ValidateStructExtra(s interface{}, extra interface{}) (bool, error) {
 	if s == nil {
 		return true, nil
 	}
@@ -948,13 +950,13 @@ func ValidateRequestStruct(s interface{}, r *http.Request) (bool, error) {
 			(valueField.Kind() == reflect.Ptr && valueField.Elem().Kind() == reflect.Struct)) &&
 			typeField.Tag.Get(tagName) != "-" {
 			var err error
-			structResult, err = ValidateStruct(valueField.Interface())
+			structResult, err = ValidateStructExtra(valueField.Interface(), extra)
 			if err != nil {
 				err = PrependPathToErrors(err, typeField.Name)
 				errs = append(errs, err)
 			}
 		}
-		resultField, err2 := typeCheck(valueField, typeField, val, nil, r)
+		resultField, err2 := typeCheck(valueField, typeField, val, nil, extra)
 		if err2 != nil {
 
 			// Replace structure name with JSON name if there is a tag on the variable
@@ -1213,7 +1215,7 @@ func checkRequired(v reflect.Value, t reflect.StructField, options tagOptionsMap
 	return true, nil
 }
 
-func typeCheck(v reflect.Value, t reflect.StructField, o reflect.Value, options tagOptionsMap, r *http.Request) (isValid bool, resultErr error) {
+func typeCheck(v reflect.Value, t reflect.StructField, o reflect.Value, options tagOptionsMap, extra interface{}) (isValid bool, resultErr error) {
 	if !v.IsValid() {
 		return false, nil
 	}
@@ -1252,10 +1254,13 @@ func typeCheck(v reflect.Value, t reflect.StructField, o reflect.Value, options 
 	optionsOrder := options.orderedKeys()
 	for _, validatorName := range optionsOrder {
 		validatorStruct := options[validatorName]
-		if validatefunc, ok := CustomTypeTagMap.Get(validatorName); ok {
+		if validatorFunc, ok := CustomTypeTagMap.Get(validatorName); ok {
 			delete(options, validatorName)
 
-			if result := validatefunc(v.Interface(), o.Interface(), r); !result {
+			value := v.Interface()
+			context := o.Interface()
+
+			if result := validatorFunc(NewCustomValidatorParams(t.Name, value, context, extra)); !result {
 				if len(validatorStruct.customErrorMessage) > 0 {
 					customTypeErrors = append(customTypeErrors, Error{Name: t.Name, Err: TruncatingErrorf(validatorStruct.customErrorMessage, fmt.Sprint(v), validatorName), CustomErrorMessageExists: true, Validator: stripParams(validatorName)})
 					continue
@@ -1419,7 +1424,7 @@ func typeCheck(v reflect.Value, t reflect.StructField, o reflect.Value, options 
 			var resultItem bool
 			var err error
 			if v.MapIndex(k).Kind() != reflect.Struct {
-				resultItem, err = typeCheck(v.MapIndex(k), t, o, options, r)
+				resultItem, err = typeCheck(v.MapIndex(k), t, o, options, extra)
 				if err != nil {
 					return false, err
 				}
@@ -1439,7 +1444,7 @@ func typeCheck(v reflect.Value, t reflect.StructField, o reflect.Value, options 
 			var resultItem bool
 			var err error
 			if v.Index(i).Kind() != reflect.Struct {
-				resultItem, err = typeCheck(v.Index(i), t, o, options, r)
+				resultItem, err = typeCheck(v.Index(i), t, o, options, extra)
 				if err != nil {
 					return false, err
 				}
@@ -1464,7 +1469,7 @@ func typeCheck(v reflect.Value, t reflect.StructField, o reflect.Value, options 
 		if v.IsNil() {
 			return true, nil
 		}
-		return typeCheck(v.Elem(), t, o, options, r)
+		return typeCheck(v.Elem(), t, o, options, extra)
 	case reflect.Struct:
 		return true, nil
 	default:

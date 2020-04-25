@@ -2,7 +2,6 @@ package govalidator
 
 import (
 	"fmt"
-	"net/http"
 	"reflect"
 	"strings"
 	"testing"
@@ -10,10 +9,10 @@ import (
 )
 
 func init() {
-	CustomTypeTagMap.Set("customFalseValidator", CustomTypeValidator(func(i interface{}, o interface{}, r *http.Request) bool {
+	CustomTypeTagMap.Set("customFalseValidator", CustomTypeValidator(func(params *CustomValidatorParams) bool {
 		return false
 	}))
-	CustomTypeTagMap.Set("customTrueValidator", CustomTypeValidator(func(i interface{}, o interface{}, r *http.Request) bool {
+	CustomTypeTagMap.Set("customTrueValidator", CustomTypeValidator(func(params *CustomValidatorParams) bool {
 		return true
 	}))
 }
@@ -2650,8 +2649,8 @@ func TestStructWithCustomByteArray(t *testing.T) {
 	t.Parallel()
 
 	// add our custom byte array validator that fails when the byte array is pristine (all zeroes)
-	CustomTypeTagMap.Set("customByteArrayValidator", CustomTypeValidator(func(i interface{}, o interface{}, r *http.Request) bool {
-		switch v := o.(type) {
+	CustomTypeTagMap.Set("customByteArrayValidator", CustomTypeValidator(func(params *CustomValidatorParams) bool {
+		switch v := params.Context.(type) {
 		case StructWithCustomByteArray:
 			if len(v.Email) > 0 {
 				if v.Email != "test@example.com" {
@@ -2666,10 +2665,10 @@ func TestStructWithCustomByteArray(t *testing.T) {
 				}
 			}
 		default:
-			t.Errorf("Context object passed to custom validator should have been a StructWithCustomByteArray but was %T (%+v)", o, o)
+			t.Errorf("Context object passed to custom validator should have been a StructWithCustomByteArray but was %T (%+v)", params.Context, params.Context)
 		}
 
-		switch v := i.(type) {
+		switch v := params.Value.(type) {
 		case CustomByteArray:
 			for _, e := range v { // check if v is empty, i.e. all zeroes
 				if e != 0 {
@@ -2679,8 +2678,8 @@ func TestStructWithCustomByteArray(t *testing.T) {
 		}
 		return false
 	}))
-	CustomTypeTagMap.Set("customMinLengthValidator", CustomTypeValidator(func(i interface{}, o interface{}, r *http.Request) bool {
-		switch v := o.(type) {
+	CustomTypeTagMap.Set("customMinLengthValidator", CustomTypeValidator(func(params *CustomValidatorParams) bool {
+		switch v := params.Context.(type) {
 		case StructWithCustomByteArray:
 			return len(v.ID) >= v.CustomMinLength
 		// for ValidateMap
@@ -3471,7 +3470,7 @@ func TestErrorsByField(t *testing.T) {
 		ID    string `valid:"falseValidation"`
 	}
 
-	CustomTypeTagMap.Set("falseValidation", CustomTypeValidator(func(i interface{}, o interface{}, r *http.Request) bool {
+	CustomTypeTagMap.Set("falseValidation", CustomTypeValidator(func(params *CustomValidatorParams) bool {
 		return false
 	}))
 
@@ -3742,7 +3741,7 @@ func TestIsCIDR(t *testing.T) {
 
 func TestOptionalCustomValidators(t *testing.T) {
 
-	CustomTypeTagMap.Set("f2", CustomTypeValidator(func(i interface{}, o interface{}, r *http.Request) bool {
+	CustomTypeTagMap.Set("f2", CustomTypeValidator(func(params *CustomValidatorParams) bool {
 		return false
 	}))
 
@@ -3765,7 +3764,7 @@ func TestOptionalCustomValidators(t *testing.T) {
 
 func TestOptionalCustomValidatorsWithPointers(t *testing.T) {
 
-	CustomTypeTagMap.Set("f2", CustomTypeValidator(func(i interface{}, o interface{}) bool {
+	CustomTypeTagMap.Set("f2", CustomTypeValidator(func(params *CustomValidatorParams) bool {
 		return false
 	}))
 
