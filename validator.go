@@ -1134,6 +1134,9 @@ func ValidateStructExtra(s interface{}, extra interface{}) (bool, error) {
 		if typeField.PkgPath != "" {
 			continue // Private field
 		}
+		if typeField.Tag.Get(tagName) == "-" {
+			continue // Ignore field
+		}
 		structResult := true
 		if valueField.Kind() == reflect.Interface {
 			valueField = valueField.Elem()
