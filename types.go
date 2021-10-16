@@ -15,8 +15,10 @@ type Validator func(str string) bool
 // Third param is the HTTP request, if any related to this request
 type CustomTypeValidator func(params *CustomValidatorParams) bool
 
-// ParamValidator is a wrapper for validator functions that accepts additional parameters.
+// ParamValidator is a wrapper for validator functions that accept additional parameters.
 type ParamValidator func(str string, params ...string) bool
+
+// InterfaceParamValidator is a wrapper for functions that accept variants parameters for an interface value
 type InterfaceParamValidator func(in interface{}, params ...string) bool
 type tagOptionsMap map[string]tagOption
 
@@ -163,6 +165,8 @@ var TagMap = map[string]Validator{
 	"ISO3166Alpha2":      IsISO3166Alpha2,
 	"ISO3166Alpha3":      IsISO3166Alpha3,
 	"ISO4217":            IsISO4217,
+	"IMEI":               IsIMEI,
+	"ulid":               IsULID,
 }
 
 // ISO3166Entry stores country codes
@@ -447,10 +451,10 @@ var ISO4217List = []string{
 	"PAB", "PEN", "PGK", "PHP", "PKR", "PLN", "PYG",
 	"QAR",
 	"RON", "RSD", "RUB", "RWF",
-	"SAR", "SBD", "SCR", "SDG", "SEK", "SGD", "SHP", "SLL", "SOS", "SRD", "SSP", "STD", "SVC", "SYP", "SZL",
+	"SAR", "SBD", "SCR", "SDG", "SEK", "SGD", "SHP", "SLL", "SOS", "SRD", "SSP", "STD", "STN", "SVC", "SYP", "SZL",
 	"THB", "TJS", "TMT", "TND", "TOP", "TRY", "TTD", "TWD", "TZS",
-	"UAH", "UGX", "USD", "USN", "UYI", "UYU", "UZS",
-	"VEF", "VND", "VUV",
+	"UAH", "UGX", "USD", "USN", "UYI", "UYU", "UYW", "UZS",
+	"VEF", "VES", "VND", "VUV",
 	"WST",
 	"XAF", "XAG", "XAU", "XBA", "XBB", "XBC", "XBD", "XCD", "XDR", "XOF", "XPD", "XPF", "XPT", "XSU", "XTS", "XUA", "XXX",
 	"YER",
