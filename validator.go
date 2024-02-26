@@ -1488,7 +1488,11 @@ func typeCheck(ctx context.Context, v reflect.Value, t reflect.StructField, o re
 			value := v.Interface()
 			parent := o.Interface()
 
-			if result := validatorFunc(ctx, NewCustomValidatorParams(t.Name, value, parent)); !result {
+			result, err := validatorFunc(ctx, NewValidatorParams(t.Name, value, parent))
+			if err != nil {
+				return false, err
+			}
+			if !result {
 				if len(validatorStruct.customErrorMessage) > 0 {
 					customTypeErrors = append(customTypeErrors, Error{Name: t.Name, Err: TruncatingErrorf(validatorStruct.customErrorMessage, fmt.Sprint(v), validatorName), CustomErrorMessageExists: true, Validator: stripParams(validatorName)})
 					continue

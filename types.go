@@ -2,6 +2,7 @@ package govalidator
 
 import (
 	"context"
+	"fmt"
 	"reflect"
 	"regexp"
 	"sort"
@@ -14,7 +15,10 @@ type Validator func(str string) bool
 // CustomTypeValidator is a wrapper for validator functions that returns bool and accepts any type.
 // The second parameter should be the context (in the case of validating a struct: the whole object being validated).
 // Third param is the HTTP request, if any related to this request
-type CustomTypeValidator func(ctx context.Context, params *CustomValidatorParams) bool
+type (
+	CustomTypeValidator              func(ctx context.Context, params CustomValidatorParam) (bool, error)
+	CustomGenericValidator[T, P any] func(ctx context.Context, params *GenericValidatorParams[T, P]) (bool, error)
+)
 
 // ParamValidator is a wrapper for validator functions that accept additional parameters.
 type ParamValidator func(str string, params ...string) bool
@@ -659,65 +663,80 @@ var ISO693List = []ISO693Entry{
 	{Alpha3bCode: "zul", Alpha2Code: "zu", English: "Zulu"},
 }
 
-type CustomValidatorParams struct {
+type CustomValidatorParam interface {
+	GetField() string
+	GetValue() any
+	GetParent() any
+}
+
+type ValidatorParams struct {
 	Field  string
 	Value  any
 	Parent any
 }
 
-func NewCustomValidatorParams(field string, value any, parent any) *CustomValidatorParams {
-	return &CustomValidatorParams{Field: field, Value: value, Parent: parent}
+func NewValidatorParams(field string, value any, parent any) *ValidatorParams {
+	return &ValidatorParams{Field: field, Value: value, Parent: parent}
 }
 
-func (cvp CustomValidatorParams) GetValueString() (strPtr *string) {
-	switch cvp.Value.(type) {
-	case string:
-		str := cvp.Value.(string)
-		if len(str) > 0 {
-			strPtr = &str
+func (v ValidatorParams) GetField() string {
+	return v.Field
+}
+
+func (v ValidatorParams) GetValue() any {
+	return v.Value
+}
+
+func (v ValidatorParams) GetParent() any {
+	return v.Parent
+}
+
+var _ CustomValidatorParam = (*GenericValidatorParams[string, string])(nil)
+
+type GenericValidatorParams[V, P any] struct {
+	Field  string
+	Value  V
+	Parent P
+}
+
+func (c GenericValidatorParams[V, P]) GetField() string {
+	return c.Field
+}
+
+func (c GenericValidatorParams[V, P]) GetValue() any {
+	return c.Value
+}
+
+func (c GenericValidatorParams[V, P]) GetParent() any {
+	return c.Parent
+}
+
+func NewGenericValidatorParams[V, P any](field string, value V, parent P) *GenericValidatorParams[V, P] {
+	return &GenericValidatorParams[V, P]{Field: field, Value: value, Parent: parent}
+}
+
+type GenericValidator[T, P any] struct {
+	Validator CustomGenericValidator[T, P]
+}
+
+func NewGenericValidator[V, P any](validator CustomGenericValidator[V, P]) CustomTypeValidator {
+	return func(ctx context.Context, params CustomValidatorParam) (bool, error) {
+		value, ok := params.GetValue().(V)
+		if !ok {
+			return false, fmt.Errorf("validation parameter value type is not compatible with the generic validator of type %T", *new(V))
 		}
-	case *string:
-		if strPtr = cvp.Value.(*string); strPtr != nil && len(*strPtr) == 0 {
-			strPtr = nil
+		parent, ok := params.GetParent().(P)
+		if !ok {
+			return false, fmt.Errorf("validation parameter parent type is not compatible with the generic validator of type %T", *new(P))
 		}
+
+		param := NewGenericValidatorParams[V, P](params.GetField(), value, parent)
+		return validator(ctx, param)
 	}
-	return
 }
 
-func (cvp CustomValidatorParams) GetValueInt() (intPtr *int) {
-	switch cvp.Value.(type) {
-	case int:
-		newInt := cvp.Value.(int)
-		intPtr = &newInt
-	case *int:
-		intPtr = cvp.Value.(*int)
+func BasicValidator(validator func(ctx context.Context, params CustomValidatorParam) bool) CustomTypeValidator {
+	return func(ctx context.Context, params CustomValidatorParam) (bool, error) {
+		return validator(ctx, params), nil
 	}
-	return
-}
-
-func (cvp CustomValidatorParams) GetValueFloat() (floatPtr *float64) {
-	switch cvp.Value.(type) {
-	case float64:
-		newFloat := cvp.Value.(float64)
-		floatPtr = &newFloat
-	case *float64:
-		floatPtr = cvp.Value.(*float64)
-	case float32:
-		newFloat := float64(cvp.Value.(float32))
-		floatPtr = &newFloat
-	case *float32:
-		floatPtr32 := cvp.Value.(*float32)
-		if floatPtr32 != nil {
-			newFloat := float64(*floatPtr32)
-			floatPtr = &newFloat
-		}
-	}
-	return
-}
-
-func (cvp CustomValidatorParams) GetValueStringSlice() (strPtr []string) {
-	if strSlice, ok := cvp.Value.([]string); ok {
-		return strSlice
-	}
-	return nil
 }

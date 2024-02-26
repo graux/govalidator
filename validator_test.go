@@ -2,6 +2,7 @@ package govalidator
 
 import (
 	"context"
+	"errors"
 	"fmt"
 	"strings"
 	"testing"
@@ -9,12 +10,12 @@ import (
 )
 
 func init() {
-	CustomTypeTagMap.Set("customFalseValidator", CustomTypeValidator(func(ctx context.Context, params *CustomValidatorParams) bool {
-		return false
-	}))
-	CustomTypeTagMap.Set("customTrueValidator", CustomTypeValidator(func(ctx context.Context, params *CustomValidatorParams) bool {
-		return true
-	}))
+	CustomTypeTagMap.Set("customFalseValidator", func(ctx context.Context, params CustomValidatorParam) (bool, error) {
+		return false, nil
+	})
+	CustomTypeTagMap.Set("customTrueValidator", func(ctx context.Context, params CustomValidatorParam) (bool, error) {
+		return true, nil
+	})
 }
 
 func TestIsAlpha(t *testing.T) {
@@ -2713,34 +2714,23 @@ func TestStructWithCustomByteArray(t *testing.T) {
 	t.Parallel()
 
 	// add our custom byte array validator that fails when the byte array is pristine (all zeroes)
-	CustomTypeTagMap.Set("customByteArrayValidator", CustomTypeValidator(func(ctx context.Context, params *CustomValidatorParams) bool {
-		switch v := params.Parent.(type) {
-		case StructWithCustomByteArray:
-			if len(v.Email) > 0 {
-				if v.Email != "test@example.com" {
-					t.Errorf("v.Email should have been 'test@example.com' but was '%s'", v.Email)
-				}
+	CustomTypeTagMap.Set("customByteArrayValidator", NewGenericValidator(func(ctx context.Context, params *GenericValidatorParams[CustomByteArray, StructWithCustomByteArray]) (bool, error) {
+		parent := params.Parent
+		if len(parent.Email) > 0 {
+			if parent.Email != "test@example.com" {
+				t.Errorf("v.Email should have been 'test@example.com' but was '%s'", parent.Email)
 			}
-		default:
-			t.Errorf("Parent object passed to custom validator should have been a StructWithCustomByteArray but was %T (%+v)", params.Parent, params.Parent)
 		}
 
-		switch v := params.Value.(type) {
-		case CustomByteArray:
-			for _, e := range v { // checks if v is empty, i.e. all zeroes
-				if e != 0 {
-					return true
-				}
+		for _, e := range params.Value { // checks if v is empty, i.e. all zeroes
+			if e != 0 {
+				return true, nil
 			}
 		}
-		return false
+		return false, nil
 	}))
-	CustomTypeTagMap.Set("customMinLengthValidator", CustomTypeValidator(func(ctx context.Context, params *CustomValidatorParams) bool {
-		switch v := params.Parent.(type) {
-		case StructWithCustomByteArray:
-			return len(v.ID) >= v.CustomMinLength
-		}
-		return false
+	CustomTypeTagMap.Set("customMinLengthValidator", NewGenericValidator(func(ctx context.Context, params *GenericValidatorParams[CustomByteArray, StructWithCustomByteArray]) (bool, error) {
+		return len(params.Parent.ID) >= params.Parent.CustomMinLength, nil
 	}))
 	testCustomByteArray := CustomByteArray{'1', '2', '3', '4', '5', '6'}
 	tests := []struct {
@@ -3361,9 +3351,9 @@ func TestErrorsByField(t *testing.T) {
 		ID    string `valid:"falseValidation"`
 	}
 
-	CustomTypeTagMap.Set("falseValidation", CustomTypeValidator(func(ctx context.Context, params *CustomValidatorParams) bool {
-		return false
-	}))
+	CustomTypeTagMap.Set("falseValidation", func(ctx context.Context, params CustomValidatorParam) (bool, error) {
+		return false, nil
+	})
 
 	tests = []struct {
 		param    string
@@ -3573,7 +3563,7 @@ func TestIsCIDR(t *testing.T) {
 }
 
 func TestOptionalCustomValidators(t *testing.T) {
-	CustomTypeTagMap.Set("f2", CustomTypeValidator(func(ctx context.Context, params *CustomValidatorParams) bool {
+	CustomTypeTagMap.Set("f2", BasicValidator(func(ctx context.Context, params CustomValidatorParam) bool {
 		return false
 	}))
 
@@ -3598,17 +3588,19 @@ func TestCustomValidatorsContext(t *testing.T) {
 
 	originalContext, cancelFx := context.WithTimeout(context.Background(), time.Second)
 	defer cancelFx()
-	CustomTypeTagMap.Set("fran", CustomTypeValidator(func(ctx context.Context, params *CustomValidatorParams) bool {
+	CustomTypeTagMap.Set("fran", CustomTypeValidator(func(ctx context.Context, params CustomValidatorParam) (bool, error) {
 		testVal, ok := ctx.Value(contextKey{}).(string)
 		if !ok {
-			t.Errorf("Expected context value to be string")
-			return false
+			err := errors.New("expected context value to be string")
+			t.Error(err)
+			return false, err
 		}
 		if testVal != "context-value" {
-			t.Errorf("Expected context value to contain 'context-value'")
-			return false
+			err := errors.New("expected context value to contain 'context-value'")
+			t.Error(err)
+			return false, err
 		}
-		return true
+		return true, nil
 	}))
 
 	type CustomValidatorData struct {
@@ -3629,7 +3621,7 @@ func TestCustomValidatorsContext(t *testing.T) {
 }
 
 func TestOptionalCustomValidatorsWithPointers(t *testing.T) {
-	CustomTypeTagMap.Set("f2", CustomTypeValidator(func(ctx context.Context, params *CustomValidatorParams) bool {
+	CustomTypeTagMap.Set("f2", BasicValidator(func(ctx context.Context, params CustomValidatorParam) bool {
 		return false
 	}))
 
@@ -3694,12 +3686,12 @@ func TestValidatorIncludedInError(t *testing.T) {
 		"AuthorIP": "ipv4",
 	}
 
-	ok, errors := ValidateStruct(context.Background(), post)
+	ok, error := ValidateStruct(context.Background(), post)
 	if ok {
 		t.Errorf("expected validation to fail %v", ok)
 	}
 
-	for _, e := range errors.(Errors) {
+	for _, e := range error.(Errors) {
 		casted := e.(Error)
 		if validatorMap[casted.Name] != casted.Validator {
 			t.Errorf("expected validator for %s to be %s, but was %s", casted.Name, validatorMap[casted.Name], casted.Validator)
@@ -3718,12 +3710,12 @@ func TestValidatorIncludedInError(t *testing.T) {
 		"Body":  "length",
 	}
 
-	ok, errors = ValidateStruct(context.Background(), message)
+	ok, error = ValidateStruct(context.Background(), message)
 	if ok {
 		t.Errorf("expected validation to fail, %v", ok)
 	}
 
-	for _, e := range errors.(Errors) {
+	for _, e := range error.(Errors) {
 		casted := e.(Error)
 		if validatorMap[casted.Name] != casted.Validator {
 			t.Errorf("expected validator for %s to be %s, but was %s", casted.Name, validatorMap[casted.Name], casted.Validator)
@@ -3736,12 +3728,12 @@ func TestValidatorIncludedInError(t *testing.T) {
 	}
 	cs := CustomMessage{Text: "asdfasdfasdfasdf"}
 
-	ok, errors = ValidateStruct(context.Background(), &cs)
+	ok, error = ValidateStruct(context.Background(), &cs)
 	if ok {
 		t.Errorf("expected validation to fail, %v", ok)
 	}
 
-	validator := errors.(Errors)[0].(Error).Validator
+	validator := error.(Errors)[0].(Error).Validator
 	if validator != "length" {
 		t.Errorf("expected validator for Text to be length, but was %s", validator)
 	}
