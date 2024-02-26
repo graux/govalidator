@@ -6,8 +6,8 @@ func TestEach(t *testing.T) {
 	// TODO Maybe refactor?
 	t.Parallel()
 	acc := 0
-	data := []interface{}{1, 2, 3, 4, 5}
-	var fn Iterator = func(value interface{}, index int) {
+	data := []any{1, 2, 3, 4, 5}
+	var fn Iterator = func(value any, index int) {
 		acc = acc + value.(int)
 	}
 	Each(data, fn)
@@ -19,8 +19,8 @@ func TestEach(t *testing.T) {
 func TestMap(t *testing.T) {
 	// TODO Maybe refactor?
 	t.Parallel()
-	data := []interface{}{1, 2, 3, 4, 5}
-	var fn ResultIterator = func(value interface{}, index int) interface{} {
+	data := []any{1, 2, 3, 4, 5}
+	var fn ResultIterator = func(value any, index int) any {
 		return value.(int) * 3
 	}
 	result := Map(data, fn)
@@ -35,11 +35,11 @@ func TestFind(t *testing.T) {
 	// TODO Maybe refactor?
 	t.Parallel()
 	findElement := 96
-	data := []interface{}{1, 2, 3, 4, findElement, 5}
-	var fn1 ConditionIterator = func(value interface{}, index int) bool {
+	data := []any{1, 2, 3, 4, findElement, 5}
+	var fn1 ConditionIterator = func(value any, index int) bool {
 		return value.(int) == findElement
 	}
-	var fn2 ConditionIterator = func(value interface{}, index int) bool {
+	var fn2 ConditionIterator = func(value any, index int) bool {
 		value, _ = value.(string)
 		return value == "govalidator"
 	}
@@ -56,9 +56,9 @@ func TestFind(t *testing.T) {
 func TestFilter(t *testing.T) {
 	// TODO Maybe refactor?
 	t.Parallel()
-	data := []interface{}{1, 2, 3, 4, 5, 6, 7, 8, 9, 10}
-	answer := []interface{}{2, 4, 6, 8, 10}
-	var fn ConditionIterator = func(value interface{}, index int) bool {
+	data := []any{1, 2, 3, 4, 5, 6, 7, 8, 9, 10}
+	answer := []any{2, 4, 6, 8, 10}
+	var fn ConditionIterator = func(value any, index int) bool {
 		return value.(int)%2 == 0
 	}
 	result := Filter(data, fn)
@@ -72,9 +72,9 @@ func TestFilter(t *testing.T) {
 func TestCount(t *testing.T) {
 	// TODO Maybe refactor?
 	t.Parallel()
-	data := []interface{}{1, 2, 3, 4, 5, 6, 7, 8, 9, 10}
+	data := []any{1, 2, 3, 4, 5, 6, 7, 8, 9, 10}
 	count := 5
-	var fn ConditionIterator = func(value interface{}, index int) bool {
+	var fn ConditionIterator = func(value any, index int) bool {
 		return value.(int)%2 == 0
 	}
 	result := Count(data, fn)

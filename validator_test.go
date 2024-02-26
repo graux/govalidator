@@ -1,6 +1,7 @@
 package govalidator
 
 import (
+	"context"
 	"fmt"
 	"strings"
 	"testing"
@@ -8,10 +9,10 @@ import (
 )
 
 func init() {
-	CustomTypeTagMap.Set("customFalseValidator", CustomTypeValidator(func(params *CustomValidatorParams) bool {
+	CustomTypeTagMap.Set("customFalseValidator", CustomTypeValidator(func(ctx context.Context, params *CustomValidatorParams) bool {
 		return false
 	}))
-	CustomTypeTagMap.Set("customTrueValidator", CustomTypeValidator(func(params *CustomValidatorParams) bool {
+	CustomTypeTagMap.Set("customTrueValidator", CustomTypeValidator(func(ctx context.Context, params *CustomValidatorParams) bool {
 		return true
 	}))
 }
@@ -19,7 +20,7 @@ func init() {
 func TestIsAlpha(t *testing.T) {
 	t.Parallel()
 
-	var tests = []struct {
+	tests := []struct {
 		param    string
 		expected bool
 	}{
@@ -40,9 +41,9 @@ func TestIsAlpha(t *testing.T) {
 		{"달기&Co.", false},
 		{"〩Hours", false},
 		{"\ufff0", false},
-		{"\u0070", true},  //UTF-8(ASCII): p
-		{"\u0026", false}, //UTF-8(ASCII): &
-		{"\u0030", false}, //UTF-8(ASCII): 0
+		{"\u0070", true},  // UTF-8(ASCII): p
+		{"\u0026", false}, // UTF-8(ASCII): &
+		{"\u0030", false}, // UTF-8(ASCII): 0
 		{"123", false},
 		{"0123", false},
 		{"-00123", false},
@@ -78,7 +79,7 @@ func TestIsAlpha(t *testing.T) {
 func TestIsUTFLetter(t *testing.T) {
 	t.Parallel()
 
-	var tests = []struct {
+	tests := []struct {
 		param    string
 		expected bool
 	}{
@@ -100,9 +101,9 @@ func TestIsUTFLetter(t *testing.T) {
 		{"달기&Co.", false},
 		{"〩Hours", false},
 		{"\ufff0", false},
-		{"\u0070", true},  //UTF-8(ASCII): p
-		{"\u0026", false}, //UTF-8(ASCII): &
-		{"\u0030", false}, //UTF-8(ASCII): 0
+		{"\u0070", true},  // UTF-8(ASCII): p
+		{"\u0026", false}, // UTF-8(ASCII): &
+		{"\u0030", false}, // UTF-8(ASCII): 0
 		{"123", false},
 		{"0123", false},
 		{"-00123", false},
@@ -138,7 +139,7 @@ func TestIsUTFLetter(t *testing.T) {
 func TestIsAlphanumeric(t *testing.T) {
 	t.Parallel()
 
-	var tests = []struct {
+	tests := []struct {
 		param    string
 		expected bool
 	}{
@@ -161,9 +162,9 @@ func TestIsAlphanumeric(t *testing.T) {
 		{"달기&Co.", false},
 		{"〩Hours", false},
 		{"\ufff0", false},
-		{"\u0070", true},  //UTF-8(ASCII): p
-		{"\u0026", false}, //UTF-8(ASCII): &
-		{"\u0030", true},  //UTF-8(ASCII): 0
+		{"\u0070", true},  // UTF-8(ASCII): p
+		{"\u0026", false}, // UTF-8(ASCII): &
+		{"\u0030", true},  // UTF-8(ASCII): 0
 		{"123", true},
 		{"0123", true},
 		{"-00123", false},
@@ -199,7 +200,7 @@ func TestIsAlphanumeric(t *testing.T) {
 func TestIsUTFLetterNumeric(t *testing.T) {
 	t.Parallel()
 
-	var tests = []struct {
+	tests := []struct {
 		param    string
 		expected bool
 	}{
@@ -220,9 +221,9 @@ func TestIsUTFLetterNumeric(t *testing.T) {
 		{"달기&Co.", false},
 		{"〩Hours", true},
 		{"\ufff0", false},
-		{"\u0070", true},  //UTF-8(ASCII): p
-		{"\u0026", false}, //UTF-8(ASCII): &
-		{"\u0030", true},  //UTF-8(ASCII): 0
+		{"\u0070", true},  // UTF-8(ASCII): p
+		{"\u0026", false}, // UTF-8(ASCII): &
+		{"\u0030", true},  // UTF-8(ASCII): 0
 		{"123", true},
 		{"0123", true},
 		{"-00123", false},
@@ -258,7 +259,7 @@ func TestIsUTFLetterNumeric(t *testing.T) {
 func TestIsNumeric(t *testing.T) {
 	t.Parallel()
 
-	var tests = []struct {
+	tests := []struct {
 		param    string
 		expected bool
 	}{
@@ -279,9 +280,9 @@ func TestIsNumeric(t *testing.T) {
 		{"달기&Co.", false},
 		{"〩Hours", false},
 		{"\ufff0", false},
-		{"\u0070", false}, //UTF-8(ASCII): p
-		{"\u0026", false}, //UTF-8(ASCII): &
-		{"\u0030", true},  //UTF-8(ASCII): 0
+		{"\u0070", false}, // UTF-8(ASCII): p
+		{"\u0026", false}, // UTF-8(ASCII): &
+		{"\u0030", true},  // UTF-8(ASCII): 0
 		{"123", true},
 		{"0123", true},
 		{"-00123", false},
@@ -319,7 +320,7 @@ func TestIsNumeric(t *testing.T) {
 func TestIsUTFNumeric(t *testing.T) {
 	t.Parallel()
 
-	var tests = []struct {
+	tests := []struct {
 		param    string
 		expected bool
 	}{
@@ -340,9 +341,9 @@ func TestIsUTFNumeric(t *testing.T) {
 		{"달기&Co.", false},
 		{"〩Hours", false},
 		{"\ufff0", false},
-		{"\u0070", false}, //UTF-8(ASCII): p
-		{"\u0026", false}, //UTF-8(ASCII): &
-		{"\u0030", true},  //UTF-8(ASCII): 0
+		{"\u0070", false}, // UTF-8(ASCII): p
+		{"\u0026", false}, // UTF-8(ASCII): &
+		{"\u0030", true},  // UTF-8(ASCII): 0
 		{"123", true},
 		{"0123", true},
 		{"-00123", true},
@@ -377,11 +378,10 @@ func TestIsUTFNumeric(t *testing.T) {
 func TestIsUTFDigit(t *testing.T) {
 	t.Parallel()
 
-	var tests = []struct {
+	tests := []struct {
 		param    string
 		expected bool
 	}{
-
 		{"\n", false},
 		{"\r", false},
 		{"Ⅸ", false},
@@ -399,9 +399,9 @@ func TestIsUTFDigit(t *testing.T) {
 		{"달기&Co.", false},
 		{"〩Hours", false},
 		{"\ufff0", false},
-		{"\u0070", false}, //UTF-8(ASCII): p
-		{"\u0026", false}, //UTF-8(ASCII): &
-		{"\u0030", true},  //UTF-8(ASCII): 0
+		{"\u0070", false}, // UTF-8(ASCII): p
+		{"\u0026", false}, // UTF-8(ASCII): &
+		{"\u0030", true},  // UTF-8(ASCII): 0
 		{"123", true},
 		{"0123", true},
 		{"-00123", true},
@@ -440,7 +440,7 @@ func TestIsUTFDigit(t *testing.T) {
 func TestIsLowerCase(t *testing.T) {
 	t.Parallel()
 
-	var tests = []struct {
+	tests := []struct {
 		param    string
 		expected bool
 	}{
@@ -471,7 +471,7 @@ func TestIsLowerCase(t *testing.T) {
 func TestIsUpperCase(t *testing.T) {
 	t.Parallel()
 
-	var tests = []struct {
+	tests := []struct {
 		param    string
 		expected bool
 	}{
@@ -502,7 +502,7 @@ func TestIsUpperCase(t *testing.T) {
 func TestHasLowerCase(t *testing.T) {
 	t.Parallel()
 
-	var tests = []struct {
+	tests := []struct {
 		param    string
 		expected bool
 	}{
@@ -536,7 +536,7 @@ func TestHasLowerCase(t *testing.T) {
 func TestHasUpperCase(t *testing.T) {
 	t.Parallel()
 
-	var tests = []struct {
+	tests := []struct {
 		param    string
 		expected bool
 	}{
@@ -570,22 +570,22 @@ func TestHasUpperCase(t *testing.T) {
 func TestIsInt(t *testing.T) {
 	t.Parallel()
 
-	var tests = []struct {
+	tests := []struct {
 		param    string
 		expected bool
 	}{
-		{"-2147483648", true},          //Signed 32 Bit Min Int
-		{"2147483647", true},           //Signed 32 Bit Max Int
-		{"-2147483649", true},          //Signed 32 Bit Min Int - 1
-		{"2147483648", true},           //Signed 32 Bit Max Int + 1
-		{"4294967295", true},           //Unsigned 32 Bit Max Int
-		{"4294967296", true},           //Unsigned 32 Bit Max Int + 1
-		{"-9223372036854775808", true}, //Signed 64 Bit Min Int
-		{"9223372036854775807", true},  //Signed 64 Bit Max Int
-		{"-9223372036854775809", true}, //Signed 64 Bit Min Int - 1
-		{"9223372036854775808", true},  //Signed 64 Bit Max Int + 1
-		{"18446744073709551615", true}, //Unsigned 64 Bit Max Int
-		{"18446744073709551616", true}, //Unsigned 64 Bit Max Int + 1
+		{"-2147483648", true},          // Signed 32 Bit Min Int
+		{"2147483647", true},           // Signed 32 Bit Max Int
+		{"-2147483649", true},          // Signed 32 Bit Min Int - 1
+		{"2147483648", true},           // Signed 32 Bit Max Int + 1
+		{"4294967295", true},           // Unsigned 32 Bit Max Int
+		{"4294967296", true},           // Unsigned 32 Bit Max Int + 1
+		{"-9223372036854775808", true}, // Signed 64 Bit Min Int
+		{"9223372036854775807", true},  // Signed 64 Bit Max Int
+		{"-9223372036854775809", true}, // Signed 64 Bit Min Int - 1
+		{"9223372036854775808", true},  // Signed 64 Bit Max Int + 1
+		{"18446744073709551615", true}, // Unsigned 64 Bit Max Int
+		{"18446744073709551616", true}, // Unsigned 64 Bit Max Int + 1
 		{"", true},
 		{"123", true},
 		{"0", true},
@@ -607,7 +607,7 @@ func TestIsInt(t *testing.T) {
 func TestIsHash(t *testing.T) {
 	t.Parallel()
 
-	var tests = []struct {
+	tests := []struct {
 		param    string
 		algo     string
 		expected bool
@@ -645,7 +645,7 @@ func TestIsHash(t *testing.T) {
 func TestIsSHA3224(t *testing.T) {
 	t.Parallel()
 
-	var tests = []struct {
+	tests := []struct {
 		param    string
 		expected bool
 	}{
@@ -663,7 +663,7 @@ func TestIsSHA3224(t *testing.T) {
 func TestIsSHA3256(t *testing.T) {
 	t.Parallel()
 
-	var tests = []struct {
+	tests := []struct {
 		param    string
 		expected bool
 	}{
@@ -681,7 +681,7 @@ func TestIsSHA3256(t *testing.T) {
 func TestIsSHA3384(t *testing.T) {
 	t.Parallel()
 
-	var tests = []struct {
+	tests := []struct {
 		param    string
 		expected bool
 	}{
@@ -699,7 +699,7 @@ func TestIsSHA3384(t *testing.T) {
 func TestIsSHA3512(t *testing.T) {
 	t.Parallel()
 
-	var tests = []struct {
+	tests := []struct {
 		param    string
 		expected bool
 	}{
@@ -717,7 +717,7 @@ func TestIsSHA3512(t *testing.T) {
 func TestIsExistingEmail(t *testing.T) {
 	t.Parallel()
 
-	var tests = []struct {
+	tests := []struct {
 		param    string
 		expected bool
 	}{
@@ -747,7 +747,7 @@ func TestIsExistingEmail(t *testing.T) {
 func TestIsEmail(t *testing.T) {
 	t.Parallel()
 
-	var tests = []struct {
+	tests := []struct {
 		param    string
 		expected bool
 	}{
@@ -780,7 +780,7 @@ func TestIsEmail(t *testing.T) {
 func TestIsURL(t *testing.T) {
 	t.Parallel()
 
-	var tests = []struct {
+	tests := []struct {
 		param    string
 		expected bool
 	}{
@@ -888,7 +888,7 @@ func TestIsURL(t *testing.T) {
 func TestIsRequestURL(t *testing.T) {
 	t.Parallel()
 
-	var tests = []struct {
+	tests := []struct {
 		param    string
 		expected bool
 	}{
@@ -937,7 +937,7 @@ func TestIsRequestURL(t *testing.T) {
 func TestIsRequestURI(t *testing.T) {
 	t.Parallel()
 
-	var tests = []struct {
+	tests := []struct {
 		param    string
 		expected bool
 	}{
@@ -985,7 +985,7 @@ func TestIsRequestURI(t *testing.T) {
 func TestIsFloat(t *testing.T) {
 	t.Parallel()
 
-	var tests = []struct {
+	tests := []struct {
 		param    string
 		expected bool
 	}{
@@ -1020,7 +1020,7 @@ func TestIsFloat(t *testing.T) {
 func TestIsHexadecimal(t *testing.T) {
 	t.Parallel()
 
-	var tests = []struct {
+	tests := []struct {
 		param    string
 		expected bool
 	}{
@@ -1041,7 +1041,7 @@ func TestIsHexadecimal(t *testing.T) {
 func TestIsHexcolor(t *testing.T) {
 	t.Parallel()
 
-	var tests = []struct {
+	tests := []struct {
 		param    string
 		expected bool
 	}{
@@ -1064,7 +1064,7 @@ func TestIsHexcolor(t *testing.T) {
 func TestIsRGBcolor(t *testing.T) {
 	t.Parallel()
 
-	var tests = []struct {
+	tests := []struct {
 		param    string
 		expected bool
 	}{
@@ -1087,7 +1087,7 @@ func TestIsRGBcolor(t *testing.T) {
 func TestIsNull(t *testing.T) {
 	t.Parallel()
 
-	var tests = []struct {
+	tests := []struct {
 		param    string
 		expected bool
 	}{
@@ -1105,7 +1105,7 @@ func TestIsNull(t *testing.T) {
 func TestIsNotNull(t *testing.T) {
 	t.Parallel()
 
-	var tests = []struct {
+	tests := []struct {
 		param    string
 		expected bool
 	}{
@@ -1141,7 +1141,7 @@ func TestIsIMEI(t *testing.T) {
 func TestHasWhitespaceOnly(t *testing.T) {
 	t.Parallel()
 
-	var tests = []struct {
+	tests := []struct {
 		param    string
 		expected bool
 	}{
@@ -1166,7 +1166,7 @@ func TestHasWhitespaceOnly(t *testing.T) {
 func TestHasWhitespace(t *testing.T) {
 	t.Parallel()
 
-	var tests = []struct {
+	tests := []struct {
 		param    string
 		expected bool
 	}{
@@ -1191,7 +1191,7 @@ func TestHasWhitespace(t *testing.T) {
 func TestIsDivisibleBy(t *testing.T) {
 	t.Parallel()
 
-	var tests = []struct {
+	tests := []struct {
 		param1   string
 		param2   string
 		expected bool
@@ -1218,7 +1218,7 @@ func ExampleIsDivisibleBy() {
 func TestIsByteLength(t *testing.T) {
 	t.Parallel()
 
-	var tests = []struct {
+	tests := []struct {
 		param1   string
 		param2   int
 		param3   int
@@ -1241,7 +1241,7 @@ func TestIsByteLength(t *testing.T) {
 func TestIsJSON(t *testing.T) {
 	t.Parallel()
 
-	var tests = []struct {
+	tests := []struct {
 		param    string
 		expected bool
 	}{
@@ -1266,7 +1266,7 @@ func TestIsJSON(t *testing.T) {
 func TestIsMultibyte(t *testing.T) {
 	t.Parallel()
 
-	var tests = []struct {
+	tests := []struct {
 		param    string
 		expected bool
 	}{
@@ -1292,7 +1292,7 @@ func TestIsMultibyte(t *testing.T) {
 func TestIsASCII(t *testing.T) {
 	t.Parallel()
 
-	var tests = []struct {
+	tests := []struct {
 		param    string
 		expected bool
 	}{
@@ -1318,7 +1318,7 @@ func TestIsASCII(t *testing.T) {
 func TestIsPrintableASCII(t *testing.T) {
 	t.Parallel()
 
-	var tests = []struct {
+	tests := []struct {
 		param    string
 		expected bool
 	}{
@@ -1345,7 +1345,7 @@ func TestIsPrintableASCII(t *testing.T) {
 func TestIsFullWidth(t *testing.T) {
 	t.Parallel()
 
-	var tests = []struct {
+	tests := []struct {
 		param    string
 		expected bool
 	}{
@@ -1370,7 +1370,7 @@ func TestIsFullWidth(t *testing.T) {
 func TestIsHalfWidth(t *testing.T) {
 	t.Parallel()
 
-	var tests = []struct {
+	tests := []struct {
 		param    string
 		expected bool
 	}{
@@ -1394,7 +1394,7 @@ func TestIsHalfWidth(t *testing.T) {
 func TestIsVariableWidth(t *testing.T) {
 	t.Parallel()
 
-	var tests = []struct {
+	tests := []struct {
 		param    string
 		expected bool
 	}{
@@ -1423,7 +1423,7 @@ func TestIsUUID(t *testing.T) {
 	t.Parallel()
 
 	// Tests without version
-	var tests = []struct {
+	tests := []struct {
 		param    string
 		expected bool
 	}{
@@ -1485,7 +1485,6 @@ func TestIsUUID(t *testing.T) {
 		param    string
 		expected bool
 	}{
-
 		{"", false},
 		{"xxxa987fbc9-4bed-3078-cf07-9141ba07c9f3", false},
 		{"9c858901-8a57-4791-81fe-4c455b099bc9", false},
@@ -1504,7 +1503,7 @@ func TestIsUUID(t *testing.T) {
 func TestIsULID(t *testing.T) {
 	t.Parallel()
 
-	var tests = []struct {
+	tests := []struct {
 		param    string
 		expected bool
 	}{
@@ -1579,7 +1578,7 @@ func TestIsISBN(t *testing.T) {
 	t.Parallel()
 
 	// Without version
-	var tests = []struct {
+	tests := []struct {
 		param    string
 		expected bool
 	}{
@@ -1650,7 +1649,7 @@ func TestIsISBN(t *testing.T) {
 func TestIsDataURI(t *testing.T) {
 	t.Parallel()
 
-	var tests = []struct {
+	tests := []struct {
 		param    string
 		expected bool
 	}{
@@ -1678,7 +1677,7 @@ func TestIsDataURI(t *testing.T) {
 func TestIsMagnetURI(t *testing.T) {
 	t.Parallel()
 
-	var tests = []struct {
+	tests := []struct {
 		param    string
 		expected bool
 	}{
@@ -1713,7 +1712,7 @@ func TestIsMagnetURI(t *testing.T) {
 func TestIsBase64(t *testing.T) {
 	t.Parallel()
 
-	var tests = []struct {
+	tests := []struct {
 		param    string
 		expected bool
 	}{
@@ -1741,7 +1740,7 @@ func TestIsBase64(t *testing.T) {
 func TestIsISO3166Alpha2(t *testing.T) {
 	t.Parallel()
 
-	var tests = []struct {
+	tests := []struct {
 		param    string
 		expected bool
 	}{
@@ -1770,7 +1769,7 @@ func TestIsISO3166Alpha2(t *testing.T) {
 func TestIsISO3166Alpha3(t *testing.T) {
 	t.Parallel()
 
-	var tests = []struct {
+	tests := []struct {
 		param    string
 		expected bool
 	}{
@@ -1798,7 +1797,7 @@ func TestIsISO3166Alpha3(t *testing.T) {
 func TestIsISO693Alpha2(t *testing.T) {
 	t.Parallel()
 
-	var tests = []struct {
+	tests := []struct {
 		param    string
 		expected bool
 	}{
@@ -1827,7 +1826,7 @@ func TestIsISO693Alpha2(t *testing.T) {
 func TestIsISO693Alpha3b(t *testing.T) {
 	t.Parallel()
 
-	var tests = []struct {
+	tests := []struct {
 		param    string
 		expected bool
 	}{
@@ -1857,7 +1856,7 @@ func TestIsIP(t *testing.T) {
 	t.Parallel()
 
 	// Without version
-	var tests = []struct {
+	tests := []struct {
 		param    string
 		expected bool
 	}{
@@ -1923,7 +1922,7 @@ func TestIsIP(t *testing.T) {
 func TestIsPort(t *testing.T) {
 	t.Parallel()
 
-	var tests = []struct {
+	tests := []struct {
 		param    string
 		expected bool
 	}{
@@ -1945,7 +1944,7 @@ func TestIsPort(t *testing.T) {
 func TestIsDNSName(t *testing.T) {
 	t.Parallel()
 
-	var tests = []struct {
+	tests := []struct {
 		param    string
 		expected bool
 	}{
@@ -1986,7 +1985,7 @@ func TestIsDNSName(t *testing.T) {
 
 func TestIsHost(t *testing.T) {
 	t.Parallel()
-	var tests = []struct {
+	tests := []struct {
 		param    string
 		expected bool
 	}{
@@ -2006,13 +2005,12 @@ func TestIsHost(t *testing.T) {
 			t.Errorf("Expected IsHost(%q) to be %v, got %v", test.param, test.expected, actual)
 		}
 	}
-
 }
 
 func TestIsDialString(t *testing.T) {
 	t.Parallel()
 
-	var tests = []struct {
+	tests := []struct {
 		param    string
 		expected bool
 	}{
@@ -2041,7 +2039,7 @@ func TestIsDialString(t *testing.T) {
 func TestIsMAC(t *testing.T) {
 	t.Parallel()
 
-	var tests = []struct {
+	tests := []struct {
 		param    string
 		expected bool
 	}{
@@ -2062,12 +2060,12 @@ func TestIsMAC(t *testing.T) {
 func TestFilePath(t *testing.T) {
 	t.Parallel()
 
-	var tests = []struct {
+	tests := []struct {
 		param    string
 		expected bool
 		osType   int
 	}{
-		{"c:\\" + strings.Repeat("a", 32767), true, Win}, //See http://msdn.microsoft.com/en-us/library/aa365247(VS.85).aspx#maxpath
+		{"c:\\" + strings.Repeat("a", 32767), true, Win}, // See http://msdn.microsoft.com/en-us/library/aa365247(VS.85).aspx#maxpath
 		{"c:\\" + strings.Repeat("a", 32768), false, Win},
 		{"c:\\path\\file (x86)\bar", true, Win},
 		{"c:\\path\\file", true, Win},
@@ -2098,11 +2096,11 @@ func TestFilePath(t *testing.T) {
 func TestIsWinFilePath(t *testing.T) {
 	t.Parallel()
 
-	var tests = []struct {
+	tests := []struct {
 		param    string
 		expected bool
 	}{
-		{"c:\\" + strings.Repeat("a", 32767), true}, //See http://msdn.microsoft.com/en-us/library/aa365247(VS.85).aspx#maxpath
+		{"c:\\" + strings.Repeat("a", 32767), true}, // See http://msdn.microsoft.com/en-us/library/aa365247(VS.85).aspx#maxpath
 		{"c:\\" + strings.Repeat("a", 32768), false},
 		{"c:\\path\\file (x86)\\bar", true},
 		{"c:\\path\\file", true},
@@ -2126,15 +2124,15 @@ func TestIsWinFilePath(t *testing.T) {
 func TestIsUnixFilePath(t *testing.T) {
 	t.Parallel()
 
-	var tests = []struct {
+	tests := []struct {
 		param    string
 		expected bool
 	}{
-		{"c:/path/file/", true},    //relative path
-		{"../path/file/", true},    //relative path
-		{"../../path/file/", true}, //relative path
-		{"./path/file/", true},     //relative path
-		{"./file.dghdg", true},     //relative path
+		{"c:/path/file/", true},    // relative path
+		{"../path/file/", true},    // relative path
+		{"../../path/file/", true}, // relative path
+		{"./path/file/", true},     // relative path
+		{"./file.dghdg", true},     // relative path
 		{"/path/file/", true},
 		{"/path/file:SAMPLE/", true},
 		{"/path/file:/.txt", true},
@@ -2161,7 +2159,7 @@ func TestIsUnixFilePath(t *testing.T) {
 func TestIsLatitude(t *testing.T) {
 	t.Parallel()
 
-	var tests = []struct {
+	tests := []struct {
 		param    string
 		expected bool
 	}{
@@ -2183,7 +2181,7 @@ func TestIsLatitude(t *testing.T) {
 func TestIsLongitude(t *testing.T) {
 	t.Parallel()
 
-	var tests = []struct {
+	tests := []struct {
 		param    string
 		expected bool
 	}{
@@ -2205,7 +2203,7 @@ func TestIsLongitude(t *testing.T) {
 func TestIsSSN(t *testing.T) {
 	t.Parallel()
 
-	var tests = []struct {
+	tests := []struct {
 		param    string
 		expected bool
 	}{
@@ -2226,7 +2224,7 @@ func TestIsSSN(t *testing.T) {
 func TestIsMongoID(t *testing.T) {
 	t.Parallel()
 
-	var tests = []struct {
+	tests := []struct {
 		param    string
 		expected bool
 	}{
@@ -2246,7 +2244,7 @@ func TestIsMongoID(t *testing.T) {
 
 func TestIsSemver(t *testing.T) {
 	t.Parallel()
-	var tests = []struct {
+	tests := []struct {
 		param    string
 		expected bool
 	}{
@@ -2282,7 +2280,7 @@ func TestIsSemver(t *testing.T) {
 
 func TestIsTime(t *testing.T) {
 	t.Parallel()
-	var tests = []struct {
+	tests := []struct {
 		param    string
 		format   string
 		expected bool
@@ -2315,7 +2313,7 @@ func TestIsTime(t *testing.T) {
 
 func TestIsRFC3339(t *testing.T) {
 	t.Parallel()
-	var tests = []struct {
+	tests := []struct {
 		param    string
 		expected bool
 	}{
@@ -2341,7 +2339,7 @@ func TestIsRFC3339(t *testing.T) {
 func TestIsISO4217(t *testing.T) {
 	t.Parallel()
 
-	var tests = []struct {
+	tests := []struct {
 		param    string
 		expected bool
 	}{
@@ -2363,7 +2361,7 @@ func TestIsISO4217(t *testing.T) {
 func TestByteLength(t *testing.T) {
 	t.Parallel()
 
-	var tests = []struct {
+	tests := []struct {
 		value    string
 		min      string
 		max      string
@@ -2386,7 +2384,7 @@ func TestByteLength(t *testing.T) {
 func TestRuneLength(t *testing.T) {
 	t.Parallel()
 
-	var tests = []struct {
+	tests := []struct {
 		value    string
 		min      string
 		max      string
@@ -2409,7 +2407,7 @@ func TestRuneLength(t *testing.T) {
 func TestStringLength(t *testing.T) {
 	t.Parallel()
 
-	var tests = []struct {
+	tests := []struct {
 		value    string
 		min      string
 		max      string
@@ -2435,7 +2433,7 @@ func TestStringLength(t *testing.T) {
 func TestIsIn(t *testing.T) {
 	t.Parallel()
 
-	var tests = []struct {
+	tests := []struct {
 		value    string
 		params   []string
 		expected bool
@@ -2551,7 +2549,7 @@ type MessageWithSeveralFieldsStruct struct {
 }
 
 func TestValidateMissingValidationDeclarationStruct(t *testing.T) {
-	var tests = []struct {
+	tests := []struct {
 		param    MissingValidationDeclarationStruct
 		expected bool
 	}{
@@ -2560,7 +2558,7 @@ func TestValidateMissingValidationDeclarationStruct(t *testing.T) {
 	}
 	SetFieldsRequiredByDefault(true)
 	for _, test := range tests {
-		actual, err := ValidateStruct(test.param)
+		actual, err := ValidateStruct(context.Background(), test.param)
 		if actual != test.expected {
 			t.Errorf("Expected ValidateStruct(%q) to be %v, got %v", test.param, test.expected, actual)
 			if err != nil {
@@ -2572,7 +2570,7 @@ func TestValidateMissingValidationDeclarationStruct(t *testing.T) {
 }
 
 func TestFieldRequiredByDefault(t *testing.T) {
-	var tests = []struct {
+	tests := []struct {
 		param    FieldRequiredByDefault
 		expected bool
 	}{
@@ -2580,7 +2578,7 @@ func TestFieldRequiredByDefault(t *testing.T) {
 	}
 	SetFieldsRequiredByDefault(true)
 	for _, test := range tests {
-		actual, err := ValidateStruct(test.param)
+		actual, err := ValidateStruct(context.Background(), test.param)
 		if actual != test.expected {
 			t.Errorf("Expected ValidateStruct(%q) to be %v, got %v", test.param, test.expected, actual)
 			if err != nil {
@@ -2592,7 +2590,7 @@ func TestFieldRequiredByDefault(t *testing.T) {
 }
 
 func TestMultipleFieldsRequiredByDefault(t *testing.T) {
-	var tests = []struct {
+	tests := []struct {
 		param    MultipleFieldsRequiredByDefault
 		expected bool
 	}{
@@ -2600,7 +2598,7 @@ func TestMultipleFieldsRequiredByDefault(t *testing.T) {
 	}
 	SetFieldsRequiredByDefault(true)
 	for _, test := range tests {
-		actual, err := ValidateStruct(test.param)
+		actual, err := ValidateStruct(context.Background(), test.param)
 		if actual != test.expected {
 			t.Errorf("Expected ValidateStruct(%q) to be %v, got %v", test.param, test.expected, actual)
 			if err != nil {
@@ -2612,7 +2610,7 @@ func TestMultipleFieldsRequiredByDefault(t *testing.T) {
 }
 
 func TestFieldsRequiredByDefaultButExemptStruct(t *testing.T) {
-	var tests = []struct {
+	tests := []struct {
 		param    FieldsRequiredByDefaultButExemptStruct
 		expected bool
 	}{
@@ -2623,7 +2621,7 @@ func TestFieldsRequiredByDefaultButExemptStruct(t *testing.T) {
 	}
 	SetFieldsRequiredByDefault(true)
 	for _, test := range tests {
-		actual, err := ValidateStruct(test.param)
+		actual, err := ValidateStruct(context.Background(), test.param)
 		if actual != test.expected {
 			t.Errorf("Expected ValidateStruct(%q) to be %v, got %v", test.param, test.expected, actual)
 			if err != nil {
@@ -2635,7 +2633,7 @@ func TestFieldsRequiredByDefaultButExemptStruct(t *testing.T) {
 }
 
 func TestFieldsRequiredByDefaultButExemptOrOptionalStruct(t *testing.T) {
-	var tests = []struct {
+	tests := []struct {
 		param    FieldsRequiredByDefaultButExemptOrOptionalStruct
 		expected bool
 	}{
@@ -2647,7 +2645,7 @@ func TestFieldsRequiredByDefaultButExemptOrOptionalStruct(t *testing.T) {
 	}
 	SetFieldsRequiredByDefault(true)
 	for _, test := range tests {
-		actual, err := ValidateStruct(test.param)
+		actual, err := ValidateStruct(context.Background(), test.param)
 		if actual != test.expected {
 			t.Errorf("Expected ValidateStruct(%q) to be %v, got %v", test.param, test.expected, actual)
 			if err != nil {
@@ -2664,7 +2662,7 @@ func TestInvalidValidator(t *testing.T) {
 	}
 
 	invalidStruct := InvalidStruct{1}
-	if valid, err := ValidateStruct(&invalidStruct); valid || err == nil ||
+	if valid, err := ValidateStruct(context.Background(), &invalidStruct); valid || err == nil ||
 		err.Error() != `Field: The following validator is invalid or can't be applied to the field: "someInvalidValidator"` {
 		t.Errorf("Got an unexpected result for struct with invalid validator: %t %s", valid, err)
 	}
@@ -2683,22 +2681,22 @@ func TestCustomValidator(t *testing.T) {
 		Field int `valid:"customTrueValidator,required"`
 	}
 
-	if valid, err := ValidateStruct(&ValidStruct{Field: 1}); !valid || err != nil {
+	if valid, err := ValidateStruct(context.Background(), &ValidStruct{Field: 1}); !valid || err != nil {
 		t.Errorf("Got an unexpected result for struct with custom always true validator: %t %s", valid, err)
 	}
 
-	if valid, err := ValidateStruct(&InvalidStruct{Field: 1}); valid || err == nil || err.Error() != "Value: 1 Custom validator error: customFalseValidator" {
+	if valid, err := ValidateStruct(context.Background(), &InvalidStruct{Field: 1}); valid || err == nil || err.Error() != "Value: 1 Custom validator error: customFalseValidator" {
 		fmt.Println(err)
 		t.Errorf("Got an unexpected result for struct with custom always false validator: %t %s", valid, err)
 	}
 
 	mixedStruct := StructWithCustomAndBuiltinValidator{}
-	if valid, err := ValidateStruct(&mixedStruct); valid || err == nil || err.Error() != "Field: non zero value required" {
+	if valid, err := ValidateStruct(context.Background(), &mixedStruct); valid || err == nil || err.Error() != "Field: non zero value required" {
 		t.Errorf("Got an unexpected result for invalid struct with custom and built-in validators: %t %s", valid, err)
 	}
 
 	mixedStruct.Field = 1
-	if valid, err := ValidateStruct(&mixedStruct); !valid || err != nil {
+	if valid, err := ValidateStruct(context.Background(), &mixedStruct); !valid || err != nil {
 		t.Errorf("Got an unexpected result for valid struct with custom and built-in validators: %t %s", valid, err)
 	}
 }
@@ -2715,8 +2713,8 @@ func TestStructWithCustomByteArray(t *testing.T) {
 	t.Parallel()
 
 	// add our custom byte array validator that fails when the byte array is pristine (all zeroes)
-	CustomTypeTagMap.Set("customByteArrayValidator", CustomTypeValidator(func(params *CustomValidatorParams) bool {
-		switch v := params.Context.(type) {
+	CustomTypeTagMap.Set("customByteArrayValidator", CustomTypeValidator(func(ctx context.Context, params *CustomValidatorParams) bool {
+		switch v := params.Parent.(type) {
 		case StructWithCustomByteArray:
 			if len(v.Email) > 0 {
 				if v.Email != "test@example.com" {
@@ -2724,7 +2722,7 @@ func TestStructWithCustomByteArray(t *testing.T) {
 				}
 			}
 		default:
-			t.Errorf("Context object passed to custom validator should have been a StructWithCustomByteArray but was %T (%+v)", params.Context, params.Context)
+			t.Errorf("Parent object passed to custom validator should have been a StructWithCustomByteArray but was %T (%+v)", params.Parent, params.Parent)
 		}
 
 		switch v := params.Value.(type) {
@@ -2737,15 +2735,15 @@ func TestStructWithCustomByteArray(t *testing.T) {
 		}
 		return false
 	}))
-	CustomTypeTagMap.Set("customMinLengthValidator", CustomTypeValidator(func(params *CustomValidatorParams) bool {
-		switch v := params.Context.(type) {
+	CustomTypeTagMap.Set("customMinLengthValidator", CustomTypeValidator(func(ctx context.Context, params *CustomValidatorParams) bool {
+		switch v := params.Parent.(type) {
 		case StructWithCustomByteArray:
 			return len(v.ID) >= v.CustomMinLength
 		}
 		return false
 	}))
 	testCustomByteArray := CustomByteArray{'1', '2', '3', '4', '5', '6'}
-	var tests = []struct {
+	tests := []struct {
 		param    StructWithCustomByteArray
 		expected bool
 	}{
@@ -2756,7 +2754,7 @@ func TestStructWithCustomByteArray(t *testing.T) {
 	}
 	SetFieldsRequiredByDefault(true)
 	for _, test := range tests {
-		actual, err := ValidateStruct(test.param)
+		actual, err := ValidateStruct(context.Background(), test.param)
 		if actual != test.expected {
 			t.Errorf("Expected ValidateStruct(%q) to be %v, got %v", test.param, test.expected, actual)
 			if err != nil {
@@ -2768,7 +2766,7 @@ func TestStructWithCustomByteArray(t *testing.T) {
 }
 
 func TestValidateNegationStruct(t *testing.T) {
-	var tests = []struct {
+	tests := []struct {
 		param    NegationStruct
 		expected bool
 	}{
@@ -2782,7 +2780,7 @@ func TestValidateNegationStruct(t *testing.T) {
 		{NegationStruct{"11", "11"}, false},
 	}
 	for _, test := range tests {
-		actual, err := ValidateStruct(test.param)
+		actual, err := ValidateStruct(context.Background(), test.param)
 		if actual != test.expected {
 			t.Errorf("Expected ValidateStruct(%q) to be %v, got %v", test.param, test.expected, actual)
 			if err != nil {
@@ -2793,8 +2791,8 @@ func TestValidateNegationStruct(t *testing.T) {
 }
 
 func TestLengthStruct(t *testing.T) {
-	var tests = []struct {
-		param    interface{}
+	tests := []struct {
+		param    any
 		expected bool
 	}{
 		{LengthStruct{"11111"}, false},
@@ -2803,7 +2801,7 @@ func TestLengthStruct(t *testing.T) {
 	}
 
 	for _, test := range tests {
-		actual, err := ValidateStruct(test.param)
+		actual, err := ValidateStruct(context.Background(), test.param)
 		if actual != test.expected {
 			t.Errorf("Expected ValidateStruct(%q) to be %v, got %v", test.param, test.expected, actual)
 			if err != nil {
@@ -2814,8 +2812,8 @@ func TestLengthStruct(t *testing.T) {
 }
 
 func TestStringLengthStruct(t *testing.T) {
-	var tests = []struct {
-		param    interface{}
+	tests := []struct {
+		param    any
 		expected bool
 	}{
 		{StringLengthStruct{"11111"}, false},
@@ -2828,7 +2826,7 @@ func TestStringLengthStruct(t *testing.T) {
 	}
 
 	for _, test := range tests {
-		actual, err := ValidateStruct(test.param)
+		actual, err := ValidateStruct(context.Background(), test.param)
 		if actual != test.expected {
 			t.Errorf("Expected ValidateStruct(%q) to be %v, got %v", test.param, test.expected, actual)
 			if err != nil {
@@ -2839,8 +2837,8 @@ func TestStringLengthStruct(t *testing.T) {
 }
 
 func TestStringMatchesStruct(t *testing.T) {
-	var tests = []struct {
-		param    interface{}
+	tests := []struct {
+		param    any
 		expected bool
 	}{
 		{StringMatchesStruct{"123"}, true},
@@ -2849,7 +2847,7 @@ func TestStringMatchesStruct(t *testing.T) {
 	}
 
 	for _, test := range tests {
-		actual, err := ValidateStruct(test.param)
+		actual, err := ValidateStruct(context.Background(), test.param)
 		if actual != test.expected {
 			t.Errorf("Expected ValidateStruct(%q) to be %v, got %v", test.param, test.expected, actual)
 			if err != nil {
@@ -2860,8 +2858,8 @@ func TestStringMatchesStruct(t *testing.T) {
 }
 
 func TestIsInStruct(t *testing.T) {
-	var tests = []struct {
-		param    interface{}
+	tests := []struct {
+		param    any
 		expected bool
 	}{
 		{IsInStruct{"PRESENT"}, true},
@@ -2871,7 +2869,7 @@ func TestIsInStruct(t *testing.T) {
 	}
 
 	for _, test := range tests {
-		actual, err := ValidateStruct(test.param)
+		actual, err := ValidateStruct(context.Background(), test.param)
 		if actual != test.expected {
 			t.Errorf("Expected ValidateStruct(%q) to be %v, got %v", test.param, test.expected, actual)
 			if err != nil {
@@ -2886,8 +2884,8 @@ func TestRequiredIsInStruct(t *testing.T) {
 		IsIn string `valid:"in(PRESENT|PRÉSENTE|NOTABSENT),required"`
 	}
 
-	var tests = []struct {
-		param    interface{}
+	tests := []struct {
+		param    any
 		expected bool
 	}{
 		{RequiredIsInStruct{"PRESENT"}, true},
@@ -2897,7 +2895,7 @@ func TestRequiredIsInStruct(t *testing.T) {
 	}
 
 	for _, test := range tests {
-		actual, err := ValidateStruct(test.param)
+		actual, err := ValidateStruct(context.Background(), test.param)
 		if actual != test.expected {
 			t.Errorf("Expected ValidateStruct(%q) to be %v, got %v", test.param, test.expected, actual)
 			if err != nil {
@@ -2912,8 +2910,8 @@ func TestEmptyRequiredIsInStruct(t *testing.T) {
 		IsIn string `valid:"in(),required"`
 	}
 
-	var tests = []struct {
-		param    interface{}
+	tests := []struct {
+		param    any
 		expected bool
 	}{
 		{EmptyRequiredIsInStruct{"PRESENT"}, false},
@@ -2923,7 +2921,7 @@ func TestEmptyRequiredIsInStruct(t *testing.T) {
 	}
 
 	for _, test := range tests {
-		actual, err := ValidateStruct(test.param)
+		actual, err := ValidateStruct(context.Background(), test.param)
 		if actual != test.expected {
 			t.Errorf("Expected ValidateStruct(%q) to be %v, got %v", test.param, test.expected, actual)
 			if err != nil {
@@ -2938,12 +2936,12 @@ func TestEmptyStringPtr(t *testing.T) {
 		IsIn *string `valid:"length(3|5),required"`
 	}
 
-	var empty = ""
-	var valid = "123"
-	var invalid = "123456"
+	empty := ""
+	valid := "123"
+	invalid := "123456"
 
-	var tests = []struct {
-		param       interface{}
+	tests := []struct {
+		param       any
 		expected    bool
 		expectedErr string
 	}{
@@ -2955,7 +2953,7 @@ func TestEmptyStringPtr(t *testing.T) {
 
 	SetNilPtrAllowedByRequired(true)
 	for _, test := range tests {
-		actual, err := ValidateStruct(test.param)
+		actual, err := ValidateStruct(context.Background(), test.param)
 
 		if actual != test.expected {
 			t.Errorf("Expected ValidateStruct(%q) to be %v, got %v", test.param, test.expected, actual)
@@ -2985,8 +2983,8 @@ func TestNestedStruct(t *testing.T) {
 		Nested NestedStruct
 	}
 
-	var tests = []struct {
-		param       interface{}
+	tests := []struct {
+		param       any
 		expected    bool
 		expectedErr string
 	}{
@@ -3036,7 +3034,7 @@ func TestNestedStruct(t *testing.T) {
 	}
 
 	for _, test := range tests {
-		actual, err := ValidateStruct(test.param)
+		actual, err := ValidateStruct(context.Background(), test.param)
 
 		if actual != test.expected {
 			t.Errorf("Expected ValidateStruct(%q) to be %v, got %v", test.param, test.expected, actual)
@@ -3056,8 +3054,8 @@ func TestFunkyIsInStruct(t *testing.T) {
 		IsIn string `valid:"in(PRESENT|| |PRÉSENTE|NOTABSENT)"`
 	}
 
-	var tests = []struct {
-		param    interface{}
+	tests := []struct {
+		param    any
 		expected bool
 	}{
 		{FunkyIsInStruct{"PRESENT"}, true},
@@ -3067,7 +3065,7 @@ func TestFunkyIsInStruct(t *testing.T) {
 	}
 
 	for _, test := range tests {
-		actual, err := ValidateStruct(test.param)
+		actual, err := ValidateStruct(context.Background(), test.param)
 		if actual != test.expected {
 			t.Errorf("Expected ValidateStruct(%q) to be %v, got %v", test.param, test.expected, actual)
 			if err != nil {
@@ -3080,7 +3078,7 @@ func TestFunkyIsInStruct(t *testing.T) {
 // TODO: test case broken
 // func TestStringMatchesComplexStruct(t *testing.T) {
 // 	var tests = []struct {
-// 		param    interface{}
+// 		param    any
 // 		expected bool
 // 	}{
 // 		{StringMatchesComplexStruct{"$()"}, false},
@@ -3092,7 +3090,7 @@ func TestFunkyIsInStruct(t *testing.T) {
 // 	}
 
 // 	for _, test := range tests {
-// 		actual, err := ValidateStruct(test.param)
+// 		actual, err := ValidateStruct(context.Background(), test.param)
 // 		if actual != test.expected {
 // 			t.Errorf("Expected ValidateStruct(%q) to be %v, got %v", test.param, test.expected, actual)
 // 			if err != nil {
@@ -3103,9 +3101,8 @@ func TestFunkyIsInStruct(t *testing.T) {
 // }
 
 func TestValidateStruct(t *testing.T) {
-
-	var tests = []struct {
-		param    interface{}
+	tests := []struct {
+		param    any
 		expected bool
 	}{
 		{User{"John", "john@yahoo.com", "123G#678", 20, &Address{"Street", "ABC456D89"}, []Address{{"Street", "123456"}, {"Street", "123456"}}}, false},
@@ -3121,7 +3118,7 @@ func TestValidateStruct(t *testing.T) {
 		{"im not a struct", false},
 	}
 	for _, test := range tests {
-		actual, err := ValidateStruct(test.param)
+		actual, err := ValidateStruct(context.Background(), test.param)
 		if actual != test.expected {
 			t.Errorf("Expected ValidateStruct(%q) to be %v, got %v", test.param, test.expected, actual)
 			if err != nil {
@@ -3133,8 +3130,10 @@ func TestValidateStruct(t *testing.T) {
 	TagMap["d_k"] = Validator(func(str string) bool {
 		return str == "d_k"
 	})
-	result, err := ValidateStruct(PrivateStruct{"d_k", 0, []int{1, 2}, []string{"hi", "super"}, [2]Address{{"Street", "123456"},
-		{"Street", "123456"}}, Address{"Street", "123456"}, map[string]Address{"address": {"Street", "123456"}}})
+	result, err := ValidateStruct(context.Background(), PrivateStruct{"d_k", 0, []int{1, 2}, []string{"hi", "super"}, [2]Address{
+		{"Street", "123456"},
+		{"Street", "123456"},
+	}, Address{"Street", "123456"}, map[string]Address{"address": {"Street", "123456"}}})
 	if !result {
 		t.Log("Case ", 6, ": expected ", true, " when result is ", result)
 		t.Error(err)
@@ -3142,18 +3141,19 @@ func TestValidateStruct(t *testing.T) {
 	}
 }
 
-type testByteArray [8]byte
-type testByteMap map[byte]byte
-type testByteSlice []byte
-type testStringStringMap map[string]string
-type testStringIntMap map[string]int
+type (
+	testByteArray       [8]byte
+	testByteMap         map[byte]byte
+	testByteSlice       []byte
+	testStringStringMap map[string]string
+	testStringIntMap    map[string]int
+)
 
 func TestRequired(t *testing.T) {
-
 	testString := "foobar"
 	testEmptyString := ""
-	var tests = []struct {
-		param    interface{}
+	tests := []struct {
+		param    any
 		expected bool
 	}{
 		{
@@ -3258,7 +3258,7 @@ func TestRequired(t *testing.T) {
 		},
 	}
 	for _, test := range tests {
-		actual, err := ValidateStruct(test.param)
+		actual, err := ValidateStruct(context.Background(), test.param)
 		if actual != test.expected {
 			t.Errorf("Expected ValidateStruct(%q) to be %v, got %v", test.param, test.expected, actual)
 			if err != nil {
@@ -3271,7 +3271,7 @@ func TestRequired(t *testing.T) {
 func TestErrorByField(t *testing.T) {
 	t.Parallel()
 
-	var tests = []struct {
+	tests := []struct {
 		param    string
 		expected string
 	}{
@@ -3282,7 +3282,7 @@ func TestErrorByField(t *testing.T) {
 		{"AuthorIP", "123 does not validate as ipv4"},
 	}
 	post := &Post{"My123", "duck13126", "123"}
-	_, err := ValidateStruct(post)
+	_, err := ValidateStruct(context.Background(), post)
 
 	for _, test := range tests {
 		actual := ErrorByField(err, test.param)
@@ -3295,7 +3295,7 @@ func TestErrorByField(t *testing.T) {
 func TestErrorsByField(t *testing.T) {
 	t.Parallel()
 
-	var tests = []struct {
+	tests := []struct {
 		param    string
 		expected string
 	}{
@@ -3303,7 +3303,7 @@ func TestErrorsByField(t *testing.T) {
 		{"AuthorIP", "123 does not validate as ipv4"},
 	}
 	post := &Post{Title: "My123", Message: "duck13126", AuthorIP: "123"}
-	_, err := ValidateStruct(post)
+	_, err := ValidateStruct(context.Background(), post)
 	errs := ErrorsByField(err)
 	if len(errs) != 2 {
 		t.Errorf("There should only be 2 errors but got %v", len(errs))
@@ -3324,7 +3324,7 @@ func TestErrorsByField(t *testing.T) {
 	}
 
 	message := &MessageWithSeveralFieldsStruct{Title: ";:;message;:;", Body: ";:;message;:;"}
-	_, err = ValidateStruct(message)
+	_, err = ValidateStruct(context.Background(), message)
 	errs = ErrorsByField(err)
 	if len(errs) != 2 {
 		t.Errorf("There should only be 2 errors but got %v", len(errs))
@@ -3361,7 +3361,7 @@ func TestErrorsByField(t *testing.T) {
 		ID    string `valid:"falseValidation"`
 	}
 
-	CustomTypeTagMap.Set("falseValidation", CustomTypeValidator(func(params *CustomValidatorParams) bool {
+	CustomTypeTagMap.Set("falseValidation", CustomTypeValidator(func(ctx context.Context, params *CustomValidatorParams) bool {
 		return false
 	}))
 
@@ -3373,7 +3373,7 @@ func TestErrorsByField(t *testing.T) {
 		{"ID", "duck13126 does not validate as falseValidation"},
 	}
 	s := &StructWithCustomValidation{Email: "My123", ID: "duck13126"}
-	_, err = ValidateStruct(s)
+	_, err = ValidateStruct(context.Background(), s)
 	errs = ErrorsByField(err)
 	if len(errs) != 2 {
 		t.Errorf("There should only be 2 errors but got %v", len(errs))
@@ -3395,7 +3395,7 @@ func TestValidateStructPointers(t *testing.T) {
 		Nerd         *bool   `valid:"-"`
 	}
 
-	var tests = []struct {
+	tests := []struct {
 		param    string
 		expected string
 	}{
@@ -3410,7 +3410,7 @@ func TestValidateStructPointers(t *testing.T) {
 	food := "Pizza"
 	nerd := true
 	user := &UserWithPointers{&name, &email, &food, &nerd}
-	_, err := ValidateStruct(user)
+	_, err := ValidateStruct(context.Background(), user)
 
 	for _, test := range tests {
 		actual := ErrorByField(err, test.param)
@@ -3428,12 +3428,12 @@ func ExampleValidateStruct() {
 	}
 	post := &Post{"My Example Post", "duck", "123.234.54.3"}
 
-	//Add your own struct validation tags
+	// Add your own struct validation tags
 	TagMap["duck"] = Validator(func(str string) bool {
 		return str == "duck"
 	})
 
-	result, err := ValidateStruct(post)
+	result, err := ValidateStruct(context.Background(), post)
 	if err != nil {
 		println("error: " + err.Error())
 	}
@@ -3460,12 +3460,12 @@ func TestValidateStructParamValidatorInt(t *testing.T) {
 	test1Ok := &Test1{5, 5, 5, 5, 5, 5, 5, 5, 5, 5, 5, 5}
 	test1NotOk := &Test1{11, 11, 11, 11, 11, 11, 11, 11, 11, 11, 11, 11}
 
-	_, err := ValidateStruct(test1Ok)
+	_, err := ValidateStruct(context.Background(), test1Ok)
 	if err != nil {
 		t.Errorf("Test failed: %s", err)
 	}
 
-	_, err = ValidateStruct(test1NotOk)
+	_, err = ValidateStruct(context.Background(), test1NotOk)
 	if err == nil {
 		t.Errorf("Test failed: nil")
 	}
@@ -3491,66 +3491,48 @@ func TestValidateStructParamValidatorInt(t *testing.T) {
 	test2Ok2 := &Test2{10, 10, 10, 10, 10, 10, 10, 10, 10, 10, 10, 10}
 	test2NotOk := &Test2{2, 2, 2, 2, 2, 2, 2, 2, 2, 2, 2, 2}
 
-	_, err = ValidateStruct(test2Ok1)
+	_, err = ValidateStruct(context.Background(), test2Ok1)
 	if err != nil {
 		t.Errorf("Test failed: %s", err)
 	}
 
-	_, err = ValidateStruct(test2Ok2)
+	_, err = ValidateStruct(context.Background(), test2Ok2)
 	if err != nil {
 		t.Errorf("Test failed: %s", err)
 	}
 
-	_, err = ValidateStruct(test2NotOk)
+	_, err = ValidateStruct(context.Background(), test2NotOk)
 	if err == nil {
 		t.Errorf("Test failed: nil")
-	}
-
-	type Test3 struct {
-		Int   int   `valid:"in(1|10),int"`
-		Int8  int8  `valid:"in(1|10),int8"`
-		Int16 int16 `valid:"in(1|10),int16"`
-		Int32 int32 `valid:"in(1|10),int32"`
-		Int64 int64 `valid:"in(1|10),int64"`
-
-		Uint   uint   `valid:"in(1|10),uint"`
-		Uint8  uint8  `valid:"in(1|10),uint8"`
-		Uint16 uint16 `valid:"in(1|10),uint16"`
-		Uint32 uint32 `valid:"in(1|10),uint32"`
-		Uint64 uint64 `valid:"in(1|10),uint64"`
-
-		Float32 float32 `valid:"in(1|10),float32"`
-		Float64 float64 `valid:"in(1|10),float64"`
 	}
 
 	test3Ok1 := &Test2{1, 1, 1, 1, 1, 1, 1, 1, 1, 1, 1, 1}
 	test3Ok2 := &Test2{10, 10, 10, 10, 10, 10, 10, 10, 10, 10, 10, 10}
 	test3NotOk := &Test2{2, 2, 2, 2, 2, 2, 2, 2, 2, 2, 2, 2}
 
-	_, err = ValidateStruct(test3Ok1)
+	_, err = ValidateStruct(context.Background(), test3Ok1)
 	if err != nil {
 		t.Errorf("Test failed: %s", err)
 	}
 
-	_, err = ValidateStruct(test3Ok2)
+	_, err = ValidateStruct(context.Background(), test3Ok2)
 	if err != nil {
 		t.Errorf("Test failed: %s", err)
 	}
 
-	_, err = ValidateStruct(test3NotOk)
+	_, err = ValidateStruct(context.Background(), test3NotOk)
 	if err == nil {
 		t.Errorf("Test failed: nil")
 	}
 }
 
 func TestValidateStructUpperAndLowerCaseWithNumTypeCheck(t *testing.T) {
-
 	type StructCapital struct {
 		Total float32 `valid:"float,required"`
 	}
 
 	structCapital := &StructCapital{53.3535}
-	_, err := ValidateStruct(structCapital)
+	_, err := ValidateStruct(context.Background(), structCapital)
 	if err != nil {
 		t.Errorf("Test failed: nil")
 		fmt.Println(err)
@@ -3561,7 +3543,7 @@ func TestValidateStructUpperAndLowerCaseWithNumTypeCheck(t *testing.T) {
 	}
 
 	structLower := &StructLower{53.3535}
-	_, err = ValidateStruct(structLower)
+	_, err = ValidateStruct(context.Background(), structLower)
 	if err != nil {
 		t.Errorf("Test failed: nil")
 		fmt.Println(err)
@@ -3571,7 +3553,7 @@ func TestValidateStructUpperAndLowerCaseWithNumTypeCheck(t *testing.T) {
 func TestIsCIDR(t *testing.T) {
 	t.Parallel()
 
-	var tests = []struct {
+	tests := []struct {
 		param    string
 		expected bool
 	}{
@@ -3591,8 +3573,7 @@ func TestIsCIDR(t *testing.T) {
 }
 
 func TestOptionalCustomValidators(t *testing.T) {
-
-	CustomTypeTagMap.Set("f2", CustomTypeValidator(func(params *CustomValidatorParams) bool {
+	CustomTypeTagMap.Set("f2", CustomTypeValidator(func(ctx context.Context, params *CustomValidatorParams) bool {
 		return false
 	}))
 
@@ -3602,20 +3583,53 @@ func TestOptionalCustomValidators(t *testing.T) {
 		OptionalFirst      string `valid:"optional,f2"`
 	}
 
-	ok, err := ValidateStruct(val)
-
-	if err == nil {
-		t.Error("Expected non-nil err with optional validation, got nil")
+	ok, err := ValidateStruct(context.Background(), val)
+	if err != nil {
+		t.Errorf("Expected nil err with optional validation, got %v", err)
 	}
 
-	if ok {
-		t.Error("Expected validation to return false, got true")
+	if !ok {
+		t.Error("Expected validation to return true, got false")
+	}
+}
+
+func TestCustomValidatorsContext(t *testing.T) {
+	type contextKey struct{}
+
+	originalContext, cancelFx := context.WithTimeout(context.Background(), time.Second)
+	defer cancelFx()
+	CustomTypeTagMap.Set("fran", CustomTypeValidator(func(ctx context.Context, params *CustomValidatorParams) bool {
+		testVal, ok := ctx.Value(contextKey{}).(string)
+		if !ok {
+			t.Errorf("Expected context value to be string")
+			return false
+		}
+		if testVal != "context-value" {
+			t.Errorf("Expected context value to contain 'context-value'")
+			return false
+		}
+		return true
+	}))
+
+	type CustomValidatorData struct {
+		IDVal      string `valid:"required,int"`
+		CustomType string `valid:"required,fran"`
+	}
+
+	ok, err := ValidateStruct(context.WithValue(originalContext, contextKey{}, "context-value"), &CustomValidatorData{
+		IDVal:      "23",
+		CustomType: "grau",
+	})
+	if err != nil {
+		t.Errorf("Expected nil err with optional validation, got %v", err)
+	}
+	if !ok {
+		t.Error("Expected validation to return true, got false")
 	}
 }
 
 func TestOptionalCustomValidatorsWithPointers(t *testing.T) {
-
-	CustomTypeTagMap.Set("f2", CustomTypeValidator(func(params *CustomValidatorParams) bool {
+	CustomTypeTagMap.Set("f2", CustomTypeValidator(func(ctx context.Context, params *CustomValidatorParams) bool {
 		return false
 	}))
 
@@ -3625,8 +3639,7 @@ func TestOptionalCustomValidatorsWithPointers(t *testing.T) {
 		OptionalFirst      *string `valid:"optional,f2"`
 	}
 
-	ok, err := ValidateStruct(val)
-
+	ok, err := ValidateStruct(context.Background(), val)
 	if err != nil {
 		t.Errorf("Expected nil err with optional validation, got %v", err)
 	}
@@ -3637,7 +3650,6 @@ func TestOptionalCustomValidatorsWithPointers(t *testing.T) {
 }
 
 func TestJSONValidator(t *testing.T) {
-
 	var val struct {
 		WithJSONName      string `json:"with_json_name" valid:"-,required"`
 		WithoutJSONName   string `valid:"-,required"`
@@ -3646,7 +3658,7 @@ func TestJSONValidator(t *testing.T) {
 		WithEmptyJSONName string `json:"-" valid:"-,required"`
 	}
 
-	_, err := ValidateStruct(val)
+	_, err := ValidateStruct(context.Background(), val)
 
 	if err == nil {
 		t.Error("Expected error but got no error")
@@ -3682,7 +3694,7 @@ func TestValidatorIncludedInError(t *testing.T) {
 		"AuthorIP": "ipv4",
 	}
 
-	ok, errors := ValidateStruct(post)
+	ok, errors := ValidateStruct(context.Background(), post)
 	if ok {
 		t.Errorf("expected validation to fail %v", ok)
 	}
@@ -3706,7 +3718,7 @@ func TestValidatorIncludedInError(t *testing.T) {
 		"Body":  "length",
 	}
 
-	ok, errors = ValidateStruct(message)
+	ok, errors = ValidateStruct(context.Background(), message)
 	if ok {
 		t.Errorf("expected validation to fail, %v", ok)
 	}
@@ -3724,7 +3736,7 @@ func TestValidatorIncludedInError(t *testing.T) {
 	}
 	cs := CustomMessage{Text: "asdfasdfasdfasdf"}
 
-	ok, errors = ValidateStruct(&cs)
+	ok, errors = ValidateStruct(context.Background(), &cs)
 	if ok {
 		t.Errorf("expected validation to fail, %v", ok)
 	}
@@ -3733,11 +3745,10 @@ func TestValidatorIncludedInError(t *testing.T) {
 	if validator != "length" {
 		t.Errorf("expected validator for Text to be length, but was %s", validator)
 	}
-
 }
 
 func TestIsRsaPublicKey(t *testing.T) {
-	var tests = []struct {
+	tests := []struct {
 		rsastr   string
 		keylen   int
 		expected bool
@@ -3781,7 +3792,7 @@ bQIDAQAB
 func TestIsRegex(t *testing.T) {
 	t.Parallel()
 
-	var tests = []struct {
+	tests := []struct {
 		param    string
 		expected bool
 	}{
@@ -3822,15 +3833,15 @@ func TestIsRegex(t *testing.T) {
 		{"a{6,3}", false},
 		{"a|b", true},
 		{"a|b|", true},
-		{"a|b||", true}, //But false in python RE
+		{"a|b||", true}, // But false in python RE
 		{"(?:)", true},
-		{"(?)", true}, //But false in python RE
+		{"(?)", true}, // But false in python RE
 		{"?", false},
 		{"(?::?)", true},
 		{"(?:?)", false},
 		{"(()?)", true},
 		{"(?:?)", false},
-		{"(A conditional matching)? (?(1)matched|not matched)", false}, //But true in python RE
+		{"(A conditional matching)? (?(1)matched|not matched)", false}, // But true in python RE
 		{"(A conditional matching)? (?(2)matched|not matched)", false},
 		{"(?:A conditional matching)? (?(1)matched|not matched)", false},
 		{"(?:[a-z]+)?", true},
@@ -3871,7 +3882,7 @@ func TestIsIMSI(t *testing.T) {
 func TestIsE164(t *testing.T) {
 	t.Parallel()
 
-	var tests = []struct {
+	tests := []struct {
 		param    string
 		expected bool
 	}{

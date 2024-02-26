@@ -99,6 +99,7 @@ func addSegment(inrune, segment []rune) []rune {
 // UnderscoreToCamelCase converts from underscore separated form to camel case form.
 // Ex.: my_func => MyFunc
 func UnderscoreToCamelCase(s string) string {
+	//nolint staticcheck
 	return strings.Replace(strings.Title(strings.Replace(strings.ToLower(s), "_", " ", -1)), " ", "", -1)
 }
 
@@ -228,7 +229,6 @@ func PadBoth(str string, padStr string, padLen int) string {
 // PadString either left, right or both sides.
 // Note that padding string can be unicode and more then one character
 func buildPadStr(str string, padStr string, padLen int, padLeft bool, padRight bool) string {
-
 	// When padded length is less then the current string size
 	if padLen < utf8.RuneCountInString(str) {
 		return str
@@ -264,7 +264,7 @@ func buildPadStr(str string, padStr string, padLen int, padLeft bool, padRight b
 }
 
 // TruncatingErrorf removes extra args from fmt.Errorf if not formatted in the str object
-func TruncatingErrorf(str string, args ...interface{}) error {
+func TruncatingErrorf(str string, args ...any) error {
 	n := strings.Count(str, "%s")
 	return fmt.Errorf(str, args[:n]...)
 }

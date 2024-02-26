@@ -8,13 +8,13 @@ import (
 )
 
 // ToString convert the input to a string.
-func ToString(obj interface{}) string {
+func ToString(obj any) string {
 	res := fmt.Sprintf("%v", obj)
 	return res
 }
 
 // ToJSON convert the input to a valid JSON string
-func ToJSON(obj interface{}) (string, error) {
+func ToJSON(obj any) (string, error) {
 	res, err := json.Marshal(obj)
 	if err != nil {
 		res = []byte("")
@@ -23,7 +23,7 @@ func ToJSON(obj interface{}) (string, error) {
 }
 
 // ToFloat convert the input string to a float, or 0.0 if the input is not a float.
-func ToFloat(value interface{}) (res float64, err error) {
+func ToFloat(value any) (res float64, err error) {
 	val := reflect.ValueOf(value)
 
 	switch value.(type) {
@@ -47,7 +47,7 @@ func ToFloat(value interface{}) (res float64, err error) {
 }
 
 // ToInt convert the input string or any int type to an integer type 64, or 0 if the input is not an integer.
-func ToInt(value interface{}) (res int64, err error) {
+func ToInt(value any) (res int64, err error) {
 	val := reflect.ValueOf(value)
 
 	switch value.(type) {

@@ -10,7 +10,7 @@ func TestErrorsToString(t *testing.T) {
 	customErr := &Error{Name: "Custom Error Name", Err: fmt.Errorf("stdlib error")}
 	customErrWithCustomErrorMessage := &Error{Name: "Custom Error Name 2", Err: fmt.Errorf("Bad stuff happened"), CustomErrorMessageExists: true}
 
-	var tests = []struct {
+	tests := []struct {
 		param1   Errors
 		expected string
 	}{

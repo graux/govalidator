@@ -23,7 +23,7 @@ func ExampleToFloat() {
 }
 
 func ExampleToString() {
-	_ = ToString(new(interface{}))        // 0xc000090200
+	_ = ToString(new(any))                // 0xc000090200
 	_ = ToString(time.Second + time.Hour) // 1h1s
 	_ = ToString(123)                     // 123
 }

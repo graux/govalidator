@@ -8,7 +8,7 @@ import (
 func TestContains(t *testing.T) {
 	t.Parallel()
 
-	var tests = []struct {
+	tests := []struct {
 		param1   string
 		param2   string
 		expected bool
@@ -29,7 +29,7 @@ func TestContains(t *testing.T) {
 func TestMatches(t *testing.T) {
 	t.Parallel()
 
-	var tests = []struct {
+	tests := []struct {
 		param1   string
 		param2   string
 		expected bool
@@ -50,7 +50,7 @@ func TestMatches(t *testing.T) {
 func TestLeftTrim(t *testing.T) {
 	t.Parallel()
 
-	var tests = []struct {
+	tests := []struct {
 		param1   string
 		param2   string
 		expected string
@@ -69,7 +69,7 @@ func TestLeftTrim(t *testing.T) {
 func TestRightTrim(t *testing.T) {
 	t.Parallel()
 
-	var tests = []struct {
+	tests := []struct {
 		param1   string
 		param2   string
 		expected string
@@ -88,7 +88,7 @@ func TestRightTrim(t *testing.T) {
 func TestTrim(t *testing.T) {
 	t.Parallel()
 
-	var tests = []struct {
+	tests := []struct {
 		param1   string
 		param2   string
 		expected string
@@ -108,7 +108,7 @@ func TestTrim(t *testing.T) {
 func TestWhiteList(t *testing.T) {
 	t.Parallel()
 
-	var tests = []struct {
+	tests := []struct {
 		param1   string
 		param2   string
 		expected string
@@ -130,7 +130,7 @@ func TestWhiteList(t *testing.T) {
 func TestBlackList(t *testing.T) {
 	t.Parallel()
 
-	var tests = []struct {
+	tests := []struct {
 		param1   string
 		param2   string
 		expected string
@@ -152,7 +152,7 @@ func TestBlackList(t *testing.T) {
 func TestStripLow(t *testing.T) {
 	t.Parallel()
 
-	var tests = []struct {
+	tests := []struct {
 		param1   string
 		param2   bool
 		expected string
@@ -178,7 +178,7 @@ func TestStripLow(t *testing.T) {
 func TestReplacePattern(t *testing.T) {
 	t.Parallel()
 
-	var tests = []struct {
+	tests := []struct {
 		param1   string
 		param2   string
 		param3   string
@@ -201,7 +201,7 @@ func TestReplacePattern(t *testing.T) {
 func TestEscape(t *testing.T) {
 	t.Parallel()
 
-	var tests = []struct {
+	tests := []struct {
 		param    string
 		expected string
 	}{
@@ -218,7 +218,7 @@ func TestEscape(t *testing.T) {
 func TestUnderscoreToCamelCase(t *testing.T) {
 	t.Parallel()
 
-	var tests = []struct {
+	tests := []struct {
 		param    string
 		expected string
 	}{
@@ -237,7 +237,7 @@ func TestUnderscoreToCamelCase(t *testing.T) {
 func TestCamelCaseToUnderscore(t *testing.T) {
 	t.Parallel()
 
-	var tests = []struct {
+	tests := []struct {
 		param    string
 		expected string
 	}{
@@ -258,7 +258,7 @@ func TestCamelCaseToUnderscore(t *testing.T) {
 func TestReverse(t *testing.T) {
 	t.Parallel()
 
-	var tests = []struct {
+	tests := []struct {
 		param    string
 		expected string
 	}{
@@ -276,7 +276,7 @@ func TestReverse(t *testing.T) {
 func TestGetLines(t *testing.T) {
 	t.Parallel()
 
-	var tests = []struct {
+	tests := []struct {
 		param    string
 		expected []string
 	}{
@@ -294,7 +294,7 @@ func TestGetLines(t *testing.T) {
 func TestGetLine(t *testing.T) {
 	t.Parallel()
 
-	var tests = []struct {
+	tests := []struct {
 		param1   string
 		param2   int
 		expected string
@@ -316,7 +316,7 @@ func TestGetLine(t *testing.T) {
 func TestRemoveTags(t *testing.T) {
 	t.Parallel()
 
-	var tests = []struct {
+	tests := []struct {
 		param    string
 		expected string
 	}{
@@ -336,7 +336,7 @@ func TestRemoveTags(t *testing.T) {
 func TestSafeFileName(t *testing.T) {
 	t.Parallel()
 
-	var tests = []struct {
+	tests := []struct {
 		param    string
 		expected string
 	}{
@@ -357,7 +357,7 @@ func TestSafeFileName(t *testing.T) {
 func TestNormalizeEmail(t *testing.T) {
 	t.Parallel()
 
-	var tests = []struct {
+	tests := []struct {
 		param    string
 		expected string
 	}{
@@ -385,7 +385,7 @@ func TestNormalizeEmail(t *testing.T) {
 func TestTruncate(t *testing.T) {
 	t.Parallel()
 
-	var tests = []struct {
+	tests := []struct {
 		param1   string
 		param2   int
 		param3   string
@@ -407,7 +407,7 @@ func TestTruncate(t *testing.T) {
 func TestPadLeft(t *testing.T) {
 	t.Parallel()
 
-	var tests = []struct {
+	tests := []struct {
 		param1   string
 		param2   string
 		param3   int
@@ -431,7 +431,7 @@ func TestPadLeft(t *testing.T) {
 func TestPadRight(t *testing.T) {
 	t.Parallel()
 
-	var tests = []struct {
+	tests := []struct {
 		param1   string
 		param2   string
 		param3   int
@@ -455,7 +455,7 @@ func TestPadRight(t *testing.T) {
 func TestPadBoth(t *testing.T) {
 	t.Parallel()
 
-	var tests = []struct {
+	tests := []struct {
 		param1   string
 		param2   string
 		param3   int

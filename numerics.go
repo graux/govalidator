@@ -41,7 +41,7 @@ func IsNonPositive(value float64) bool {
 }
 
 // InRangeInt returns true if value lies between left and right border
-func InRangeInt(value, left, right interface{}) bool {
+func InRangeInt(value, left, right any) bool {
 	value64, _ := ToInt(value)
 	left64, _ := ToInt(left)
 	right64, _ := ToInt(right)
@@ -70,7 +70,7 @@ func InRangeFloat64(value, left, right float64) bool {
 // InRange returns true if value lies between left and right border, generic type to handle int, float32, float64 and string.
 // All types must the same type.
 // False if value doesn't lie in range or if it incompatible or not comparable
-func InRange(value interface{}, left interface{}, right interface{}) bool {
+func InRange(value any, left any, right any) bool {
 	switch value.(type) {
 	case int:
 		intValue, _ := ToInt(value)

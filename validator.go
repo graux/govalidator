@@ -3,13 +3,14 @@ package govalidator
 
 import (
 	"bytes"
+	"context"
 	"crypto/rsa"
 	"crypto/x509"
 	"encoding/base64"
 	"encoding/json"
 	"encoding/pem"
 	"fmt"
-	"io/ioutil"
+	"io"
 	"net"
 	"net/url"
 	"reflect"
@@ -25,37 +26,45 @@ import (
 var (
 	fieldsRequiredByDefault bool
 	nilPtrAllowedByRequired = false
-	notNumberRegexp         = regexp.MustCompile("[^0-9]+")
 	whiteSpacesAndMinus     = regexp.MustCompile(`[\s-]+`)
 	paramsRegexp            = regexp.MustCompile(`\(.*\)$`)
 )
 
-const maxURLRuneCount = 2083
-const minURLRuneCount = 3
-const rfc3339WithoutZone = "2006-01-02T15:04:05"
+const (
+	maxURLRuneCount    = 2083
+	minURLRuneCount    = 3
+	rfc3339WithoutZone = "2006-01-02T15:04:05"
+)
 
 // SetFieldsRequiredByDefault causes validation to fail when struct fields
 // do not include validations or are not explicitly marked as exempt (using `valid:"-"` or `valid:"email,optional"`).
 // This struct definition will fail govalidator.ValidateStruct() (and the field values do not matter):
-//     type exampleStruct struct {
-//         Name  string ``
-//         Email string `valid:"email"`
+//
+//	type exampleStruct struct {
+//	    Name  string ``
+//	    Email string `valid:"email"`
+//
 // This, however, will only fail when Email is empty or an invalid email address:
-//     type exampleStruct2 struct {
-//         Name  string `valid:"-"`
-//         Email string `valid:"email"`
+//
+//	type exampleStruct2 struct {
+//	    Name  string `valid:"-"`
+//	    Email string `valid:"email"`
+//
 // Lastly, this will only fail when Email is an invalid email address but not when it's empty:
-//     type exampleStruct2 struct {
-//         Name  string `valid:"-"`
-//         Email string `valid:"email,optional"`
+//
+//	type exampleStruct2 struct {
+//	    Name  string `valid:"-"`
+//	    Email string `valid:"email,optional"`
 func SetFieldsRequiredByDefault(value bool) {
 	fieldsRequiredByDefault = value
 }
 
 // SetNilPtrAllowedByRequired causes validation to pass for nil ptrs when a field is set to required.
 // The validation will still reject ptr fields in their zero value state. Example with this enabled:
-//     type exampleStruct struct {
-//         Name  *string `valid:"required"`
+//
+//	type exampleStruct struct {
+//	    Name  *string `valid:"required"`
+//
 // With `Name` set to "", this will be considered invalid input and will cause a validation error.
 // With `Name` set to nil, this will be considered valid by validation.
 // By default this is disabled.
@@ -71,7 +80,6 @@ func IsEmail(str string) bool {
 
 // IsExistingEmail checks if the string is an email of existing domain
 func IsExistingEmail(email string) bool {
-
 	if len(email) < 6 || len(email) > 254 {
 		return false
 	}
@@ -130,10 +138,10 @@ func IsURL(str string) bool {
 func IsRequestURL(rawurl string) bool {
 	url, err := url.ParseRequestURI(rawurl)
 	if err != nil {
-		return false //Couldn't even parse the rawurl
+		return false // Couldn't even parse the rawurl
 	}
 	if len(url.Scheme) == 0 {
-		return false //No Scheme found
+		return false // No Scheme found
 	}
 	return true
 }
@@ -154,8 +162,8 @@ func IsAlpha(str string) bool {
 	return rxAlpha.MatchString(str)
 }
 
-//IsUTFLetter checks if the string contains only unicode letter characters.
-//Similar to IsAlpha but for all languages. Empty string is valid.
+// IsUTFLetter checks if the string contains only unicode letter characters.
+// Similar to IsAlpha but for all languages. Empty string is valid.
 func IsUTFLetter(str string) bool {
 	if IsNull(str) {
 		return true
@@ -167,7 +175,6 @@ func IsUTFLetter(str string) bool {
 		}
 	}
 	return true
-
 }
 
 // IsAlphanumeric checks if the string contains only letters and numbers. Empty string is valid.
@@ -184,12 +191,11 @@ func IsUTFLetterNumeric(str string) bool {
 		return true
 	}
 	for _, c := range str {
-		if !unicode.IsLetter(c) && !unicode.IsNumber(c) { //letters && numbers are ok
+		if !unicode.IsLetter(c) && !unicode.IsNumber(c) { // letters && numbers are ok
 			return false
 		}
 	}
 	return true
-
 }
 
 // IsNumeric checks if the string contains only numbers. Empty string is valid.
@@ -214,12 +220,11 @@ func IsUTFNumeric(str string) bool {
 		str = strings.TrimPrefix(str, "+")
 	}
 	for _, c := range str {
-		if !unicode.IsNumber(c) { //numbers && minus sign are ok
+		if !unicode.IsNumber(c) { // numbers && minus sign are ok
 			return false
 		}
 	}
 	return true
-
 }
 
 // IsUTFDigit checks if the string contains only unicode radix-10 decimal digits. Empty string is valid.
@@ -235,12 +240,11 @@ func IsUTFDigit(str string) bool {
 		str = strings.TrimPrefix(str, "+")
 	}
 	for _, c := range str {
-		if !unicode.IsDigit(c) { //digits && minus sign are ok
+		if !unicode.IsDigit(c) { // digits && minus sign are ok
 			return false
 		}
 	}
 	return true
-
 }
 
 // IsHexadecimal checks if the string is a hexadecimal number.
@@ -398,8 +402,8 @@ const ulidEncodedSize = 26
 // IsULID checks if the string is a ULID.
 //
 // Implementation got from:
-//   https://github.com/oklog/ulid (Apache-2.0 License)
 //
+//	https://github.com/oklog/ulid (Apache-2.0 License)
 func IsULID(str string) bool {
 	// Check if a base32 encoded ULID is the right length.
 	if len(str) != ulidEncodedSize {
@@ -454,26 +458,26 @@ func IsCreditCard(str string) bool {
 	if !rxCreditCard.MatchString(sanitized) {
 		return false
 	}
-	
+
 	number, _ := ToInt(sanitized)
-	number, lastDigit := number / 10, number % 10	
+	number, lastDigit := number/10, number%10
 
 	var sum int64
-	for i:=0; number > 0; i++ {
+	for i := 0; number > 0; i++ {
 		digit := number % 10
-		
-		if i % 2 == 0 {
+
+		if i%2 == 0 {
 			digit *= 2
 			if digit > 9 {
 				digit -= 9
 			}
 		}
-		
+
 		sum += digit
 		number = number / 10
 	}
-	
-	return (sum + lastDigit) % 10 == 0
+
+	return (sum+lastDigit)%10 == 0
 }
 
 // IsISBN10 checks if the string is an ISBN version 10.
@@ -583,7 +587,7 @@ func IsBase64(str string) bool {
 // IsFilePath checks is a string is Win or Unix file path and returns it's type.
 func IsFilePath(str string) (bool, int) {
 	if rxWinPath.MatchString(str) {
-		//check windows path limit see:
+		// check windows path limit see:
 		//  http://msdn.microsoft.com/en-us/library/aa365247(VS.85).aspx#maxpath
 		if len(str[3:]) > 32767 {
 			return false, Win
@@ -595,25 +599,19 @@ func IsFilePath(str string) (bool, int) {
 	return false, Unknown
 }
 
-//IsWinFilePath checks both relative & absolute paths in Windows
+// IsWinFilePath checks both relative & absolute paths in Windows
 func IsWinFilePath(str string) bool {
 	if rxARWinPath.MatchString(str) {
-		//check windows path limit see:
+		// check windows path limit see:
 		//  http://msdn.microsoft.com/en-us/library/aa365247(VS.85).aspx#maxpath
-		if len(str[3:]) > 32767 {
-			return false
-		}
-		return true
+		return len(str[3:]) <= 32767
 	}
 	return false
 }
 
-//IsUnixFilePath checks both relative & absolute paths in Unix
+// IsUnixFilePath checks both relative & absolute paths in Unix
 func IsUnixFilePath(str string) bool {
-	if rxARUnixPath.MatchString(str) {
-		return true
-	}
-	return false
+	return rxARUnixPath.MatchString(str)
 }
 
 // IsDataURI checks if a string is base64 encoded data URI such as an image
@@ -917,7 +915,7 @@ func IsIMSI(str string) bool {
 // IsRsaPublicKey checks if a string is valid public key with provided length
 func IsRsaPublicKey(str string, keylen int) bool {
 	bb := bytes.NewBufferString(str)
-	pemBytes, err := ioutil.ReadAll(bb)
+	pemBytes, err := io.ReadAll(bb)
 	if err != nil {
 		return false
 	}
@@ -990,12 +988,13 @@ func prependPathToErrors(err error, path string) error {
 	}
 	return err
 }
-func ValidateMap(s map[string]interface{}, m map[string]interface{}) (bool, error) {
-	return ValidateMapExtra(s, m, nil)
+
+func ValidateMap(ctx context.Context, s map[string]any, m map[string]any) (bool, error) {
+	return ValidateMapExtra(ctx, s, m, nil)
 }
 
 // ValidateArray performs validation according to condition iterator that validates every element of the array
-func ValidateArray(array []interface{}, iterator ConditionIterator) bool {
+func ValidateArray(array []any, iterator ConditionIterator) bool {
 	return Every(array, iterator)
 }
 
@@ -1003,8 +1002,9 @@ func ValidateArray(array []interface{}, iterator ConditionIterator) bool {
 // result will be equal to `false` if there are any errors.
 // s is the map containing the data to be validated.
 // m is the validation map in the form:
-//   map[string]interface{}{"name":"required,alpha","address":map[string]interface{}{"line1":"required,alphanum"}}
-func ValidateMapExtra(s map[string]interface{}, m map[string]interface{}, extra interface{}) (bool, error) {
+//
+//	map[string]any{"name":"required,alpha","address":map[string]any{"line1":"required,alphanum"}}
+func ValidateMapExtra(ctx context.Context, s map[string]any, m map[string]any, extra any) (bool, error) {
 	if s == nil {
 		return true, nil
 	}
@@ -1029,15 +1029,15 @@ func ValidateMapExtra(s map[string]interface{}, m map[string]interface{}, extra 
 		structResult := true
 		resultField := true
 		switch subValidator := validator.(type) {
-		case map[string]interface{}:
+		case map[string]any:
 			var err error
-			if v, ok := value.(map[string]interface{}); !ok {
+			if v, ok := value.(map[string]any); !ok {
 				mapResult = false
 				err = fmt.Errorf("map validator has to be for the map type only; got %s", valueField.Type().String())
 				err = prependPathToErrors(err, key)
 				errs = append(errs, err)
 			} else {
-				mapResult, err = ValidateMapExtra(v, subValidator, extra)
+				mapResult, err = ValidateMapExtra(ctx, v, subValidator, extra)
 				if err != nil {
 					mapResult = false
 					err = prependPathToErrors(err, key)
@@ -1049,13 +1049,13 @@ func ValidateMapExtra(s map[string]interface{}, m map[string]interface{}, extra 
 				(valueField.Kind() == reflect.Ptr && valueField.Elem().Kind() == reflect.Struct)) &&
 				subValidator != "-" {
 				var err error
-				structResult, err = ValidateStruct(valueField.Interface())
+				structResult, err = ValidateStruct(ctx, valueField.Interface())
 				if err != nil {
 					err = prependPathToErrors(err, key)
 					errs = append(errs, err)
 				}
 			}
-			resultField, err = typeCheck(valueField, reflect.StructField{
+			resultField, err = typeCheck(ctx, valueField, reflect.StructField{
 				Name:      key,
 				PkgPath:   "",
 				Type:      val.Type(),
@@ -1063,7 +1063,7 @@ func ValidateMapExtra(s map[string]interface{}, m map[string]interface{}, extra 
 				Offset:    0,
 				Index:     []int{index},
 				Anonymous: false,
-			}, val, nil, extra)
+			}, val, nil)
 			if err != nil {
 				errs = append(errs, err)
 			}
@@ -1071,7 +1071,7 @@ func ValidateMapExtra(s map[string]interface{}, m map[string]interface{}, extra 
 			// already handlerd when checked before
 		default:
 			typeResult = false
-			err = fmt.Errorf("map validator has to be either map[string]interface{} or string; got %s", valueField.Type().String())
+			err = fmt.Errorf("map validator has to be either map[string]any or string; got %s", valueField.Type().String())
 			err = prependPathToErrors(err, key)
 			errs = append(errs, err)
 		}
@@ -1106,13 +1106,13 @@ func ValidateMapExtra(s map[string]interface{}, m map[string]interface{}, extra 
 // ValidateStruct use tags for fields.
 // result will be equal to `false` if there are any errors.
 // todo currently there is no guarantee that errors will be returned in predictable order (tests may to fail)
-func ValidateStruct(s interface{}) (bool, error) {
-	return ValidateStructExtra(s, nil)
+func ValidateStruct(ctx context.Context, s any) (bool, error) {
+	return ValidateStructExtra(ctx, s, nil)
 }
 
 // ValidateStruct use tags for fields.
 // result will be equal to `false` if there are any errors.
-func ValidateStructExtra(s interface{}, extra interface{}) (bool, error) {
+func ValidateStructExtra(ctx context.Context, s any, extra any) (bool, error) {
 	if s == nil {
 		return true, nil
 	}
@@ -1144,13 +1144,13 @@ func ValidateStructExtra(s interface{}, extra interface{}) (bool, error) {
 			(valueField.Kind() == reflect.Ptr && valueField.Elem().Kind() == reflect.Struct)) &&
 			typeField.Tag.Get(tagName) != "-" {
 			var err error
-			structResult, err = ValidateStructExtra(valueField.Interface(), extra)
+			structResult, err = ValidateStructExtra(ctx, valueField.Interface(), extra)
 			if err != nil {
 				err = prependPathToErrors(err, typeField.Name)
 				errs = append(errs, err)
 			}
 		}
-		resultField, err2 := typeCheck(valueField, typeField, val, nil, extra)
+		resultField, err2 := typeCheck(ctx, valueField, typeField, val, nil)
 		if err2 != nil {
 
 			// Replace structure name with JSON name if there is a tag on the variable
@@ -1184,7 +1184,7 @@ func ValidateStructExtra(s interface{}, extra interface{}) (bool, error) {
 }
 
 // ValidateStructAsync performs async validation of the struct and returns results through the channels
-func ValidateStructAsync(s interface{}) (<-chan bool, <-chan error) {
+func ValidateStructAsync(ctx context.Context, s any) (<-chan bool, <-chan error) {
 	res := make(chan bool)
 	errors := make(chan error)
 
@@ -1192,7 +1192,7 @@ func ValidateStructAsync(s interface{}) (<-chan bool, <-chan error) {
 		defer close(res)
 		defer close(errors)
 
-		isValid, isFailed := ValidateStruct(s)
+		isValid, isFailed := ValidateStruct(ctx, s)
 
 		res <- isValid
 		errors <- isFailed
@@ -1202,7 +1202,7 @@ func ValidateStructAsync(s interface{}) (<-chan bool, <-chan error) {
 }
 
 // ValidateMapAsync performs async validation of the map and returns results through the channels
-func ValidateMapAsync(s map[string]interface{}, m map[string]interface{}) (<-chan bool, <-chan error) {
+func ValidateMapAsync(ctx context.Context, s map[string]any, m map[string]any) (<-chan bool, <-chan error) {
 	res := make(chan bool)
 	errors := make(chan error)
 
@@ -1210,7 +1210,7 @@ func ValidateMapAsync(s map[string]interface{}, m map[string]interface{}) (<-cha
 		defer close(res)
 		defer close(errors)
 
-		isValid, isFailed := ValidateMap(s, m)
+		isValid, isFailed := ValidateMap(ctx, s, m)
 
 		res <- isValid
 		errors <- isFailed
@@ -1273,7 +1273,7 @@ func IsSemver(str string) bool {
 }
 
 // IsType checks if interface is of some type
-func IsType(v interface{}, params ...string) bool {
+func IsType(v any, params ...string) bool {
 	if len(params) == 1 {
 		typ := params[0]
 		return strings.Replace(reflect.TypeOf(v).String(), " ", "", -1) == strings.Replace(typ, " ", "", -1)
@@ -1355,7 +1355,6 @@ func StringMatches(s string, params ...string) bool {
 
 // StringLength checks string's length (including multi byte strings)
 func StringLength(str string, params ...string) bool {
-
 	if len(params) == 2 {
 		strLength := utf8.RuneCountInString(str)
 		min, _ := ToInt(params[0])
@@ -1368,7 +1367,6 @@ func StringLength(str string, params ...string) bool {
 
 // MinStringLength checks string's minimum length (including multi byte strings)
 func MinStringLength(str string, params ...string) bool {
-
 	if len(params) == 1 {
 		strLength := utf8.RuneCountInString(str)
 		min, _ := ToInt(params[0])
@@ -1380,7 +1378,6 @@ func MinStringLength(str string, params ...string) bool {
 
 // MaxStringLength checks string's maximum length (including multi byte strings)
 func MaxStringLength(str string, params ...string) bool {
-
 	if len(params) == 1 {
 		strLength := utf8.RuneCountInString(str)
 		max, _ := ToInt(params[0])
@@ -1446,7 +1443,7 @@ func checkRequired(v reflect.Value, t reflect.StructField, options tagOptionsMap
 	return true, nil
 }
 
-func typeCheck(v reflect.Value, t reflect.StructField, o reflect.Value, options tagOptionsMap, extra interface{}) (isValid bool, resultErr error) {
+func typeCheck(ctx context.Context, v reflect.Value, t reflect.StructField, o reflect.Value, options tagOptionsMap) (isValid bool, resultErr error) {
 	if !v.IsValid() {
 		return false, nil
 	}
@@ -1489,9 +1486,9 @@ func typeCheck(v reflect.Value, t reflect.StructField, o reflect.Value, options 
 			delete(options, validatorName)
 
 			value := v.Interface()
-			context := o.Interface()
+			parent := o.Interface()
 
-			if result := validatorFunc(NewCustomValidatorParams(t.Name, value, context, extra)); !result {
+			if result := validatorFunc(ctx, NewCustomValidatorParams(t.Name, value, parent)); !result {
 				if len(validatorStruct.customErrorMessage) > 0 {
 					customTypeErrors = append(customTypeErrors, Error{Name: t.Name, Err: TruncatingErrorf(validatorStruct.customErrorMessage, fmt.Sprint(v), validatorName), CustomErrorMessageExists: true, Validator: stripParams(validatorName)})
 					continue
@@ -1636,7 +1633,7 @@ func typeCheck(v reflect.Value, t reflect.StructField, o reflect.Value, options 
 						return false, Error{t.Name, fmt.Errorf("%s does not validate as %s", field, validator), customMsgExists, stripParams(validatorSpec), []string{}}
 					}
 				default:
-					//Not Yet Supported Types (Fail here!)
+					// Not Yet Supported Types (Fail here!)
 					err := fmt.Errorf("Validator %s doesn't support kind %s for value %v", validator, v.Kind(), v)
 					return false, Error{t.Name, err, false, stripParams(validatorSpec), []string{}}
 				}
@@ -1655,12 +1652,12 @@ func typeCheck(v reflect.Value, t reflect.StructField, o reflect.Value, options 
 			var resultItem bool
 			var err error
 			if v.MapIndex(k).Kind() != reflect.Struct {
-				resultItem, err = typeCheck(v.MapIndex(k), t, o, options, extra)
+				resultItem, err = typeCheck(ctx, v.MapIndex(k), t, o, options)
 				if err != nil {
 					return false, err
 				}
 			} else {
-				resultItem, err = ValidateStruct(v.MapIndex(k).Interface())
+				resultItem, err = ValidateStruct(ctx, v.MapIndex(k).Interface())
 				if err != nil {
 					err = prependPathToErrors(err, t.Name+"."+sv[i].Interface().(string))
 					return false, err
@@ -1675,12 +1672,12 @@ func typeCheck(v reflect.Value, t reflect.StructField, o reflect.Value, options 
 			var resultItem bool
 			var err error
 			if v.Index(i).Kind() != reflect.Struct {
-				resultItem, err = typeCheck(v.Index(i), t, o, options, extra)
+				resultItem, err = typeCheck(ctx, v.Index(i), t, o, options)
 				if err != nil {
 					return false, err
 				}
 			} else {
-				resultItem, err = ValidateStruct(v.Index(i).Interface())
+				resultItem, err = ValidateStruct(ctx, v.Index(i).Interface())
 				if err != nil {
 					err = prependPathToErrors(err, t.Name+"."+strconv.Itoa(i))
 					return false, err
@@ -1694,13 +1691,13 @@ func typeCheck(v reflect.Value, t reflect.StructField, o reflect.Value, options 
 		if v.IsNil() {
 			return true, nil
 		}
-		return ValidateStruct(v.Interface())
+		return ValidateStruct(ctx, v.Interface())
 	case reflect.Ptr:
 		// If the value is a pointer then checks its element
 		if v.IsNil() {
 			return true, nil
 		}
-		return typeCheck(v.Elem(), t, o, options, extra)
+		return typeCheck(ctx, v.Elem(), t, o, options)
 	case reflect.Struct:
 		return true, nil
 	default:

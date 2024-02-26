@@ -1,6 +1,7 @@
 package govalidator
 
 import (
+	"context"
 	"reflect"
 	"regexp"
 	"sort"
@@ -13,14 +14,16 @@ type Validator func(str string) bool
 // CustomTypeValidator is a wrapper for validator functions that returns bool and accepts any type.
 // The second parameter should be the context (in the case of validating a struct: the whole object being validated).
 // Third param is the HTTP request, if any related to this request
-type CustomTypeValidator func(params *CustomValidatorParams) bool
+type CustomTypeValidator func(ctx context.Context, params *CustomValidatorParams) bool
 
 // ParamValidator is a wrapper for validator functions that accept additional parameters.
 type ParamValidator func(str string, params ...string) bool
 
 // InterfaceParamValidator is a wrapper for functions that accept variants parameters for an interface value
-type InterfaceParamValidator func(in interface{}, params ...string) bool
-type tagOptionsMap map[string]tagOption
+type (
+	InterfaceParamValidator func(in any, params ...string) bool
+	tagOptionsMap           map[string]tagOption
+)
 
 func (t tagOptionsMap) orderedKeys() []string {
 	var keys []string
@@ -75,15 +78,15 @@ var ParamTagMap = map[string]ParamValidator{
 
 // ParamTagRegexMap maps param tags to their respective regexes.
 var ParamTagRegexMap = map[string]*regexp.Regexp{
-	"range":           regexp.MustCompile("^range\\((\\d+)\\|(\\d+)\\)$"),
-	"length":          regexp.MustCompile("^length\\((\\d+)\\|(\\d+)\\)$"),
-	"runelength":      regexp.MustCompile("^runelength\\((\\d+)\\|(\\d+)\\)$"),
-	"stringlength":    regexp.MustCompile("^stringlength\\((\\d+)\\|(\\d+)\\)$"),
+	"range":           regexp.MustCompile(`^range\((\d+)\|(\d+)\)$`),
+	"length":          regexp.MustCompile(`^length\((\d+)\|(\d+)\)$`),
+	"runelength":      regexp.MustCompile(`^runelength\((\d+)\|(\d+)\)$`),
+	"stringlength":    regexp.MustCompile(`^stringlength\((\d+)\|(\d+)\)$`),
 	"in":              regexp.MustCompile(`^in\((.*)\)`),
 	"matches":         regexp.MustCompile(`^matches\((.+)\)$`),
-	"rsapub":          regexp.MustCompile("^rsapub\\((\\d+)\\)$"),
-	"minstringlength": regexp.MustCompile("^minstringlength\\((\\d+)\\)$"),
-	"maxstringlength": regexp.MustCompile("^maxstringlength\\((\\d+)\\)$"),
+	"rsapub":          regexp.MustCompile(`^rsapub\((\d+)\)$`),
+	"minstringlength": regexp.MustCompile(`^minstringlength\((\d+)\)$`),
+	"maxstringlength": regexp.MustCompile(`^maxstringlength\((\d+)\)$`),
 }
 
 type customTypeTagMap struct {
@@ -178,7 +181,7 @@ type ISO3166Entry struct {
 	Numeric          string
 }
 
-//ISO3166List based on https://www.iso.org/obp/ui/#search/code/ Code Type "Officially Assigned Codes"
+// ISO3166List based on https://www.iso.org/obp/ui/#search/code/ Code Type "Officially Assigned Codes"
 var ISO3166List = []ISO3166Entry{
 	{"Afghanistan", "Afghanistan (l')", "AF", "AFG", "004"},
 	{"Albania", "Albanie (l')", "AL", "ALB", "008"},
@@ -468,7 +471,7 @@ type ISO693Entry struct {
 	English     string
 }
 
-//ISO693List based on http://data.okfn.org/data/core/language-codes/r/language-codes-3b2.json
+// ISO693List based on http://data.okfn.org/data/core/language-codes/r/language-codes-3b2.json
 var ISO693List = []ISO693Entry{
 	{Alpha3bCode: "aar", Alpha2Code: "aa", English: "Afar"},
 	{Alpha3bCode: "abk", Alpha2Code: "ab", English: "Abkhazian"},
@@ -657,14 +660,13 @@ var ISO693List = []ISO693Entry{
 }
 
 type CustomValidatorParams struct {
-	Field   string
-	Value   interface{}
-	Context interface{}
-	Extra   interface{}
+	Field  string
+	Value  any
+	Parent any
 }
 
-func NewCustomValidatorParams(field string, value interface{}, context interface{}, extra interface{}) *CustomValidatorParams {
-	return &CustomValidatorParams{Field: field, Value: value, Context: context, Extra: extra}
+func NewCustomValidatorParams(field string, value any, parent any) *CustomValidatorParams {
+	return &CustomValidatorParams{Field: field, Value: value, Parent: parent}
 }
 
 func (cvp CustomValidatorParams) GetValueString() (strPtr *string) {
@@ -718,16 +720,4 @@ func (cvp CustomValidatorParams) GetValueStringSlice() (strPtr []string) {
 		return strSlice
 	}
 	return nil
-}
-
-func (cvp CustomValidatorParams) GetExtraString() string {
-	switch cvp.Extra.(type) {
-	case string:
-		return cvp.Extra.(string)
-	case *string:
-		if strPtr := cvp.Extra.(*string); strPtr != nil {
-			return *strPtr
-		}
-	}
-	return ""
 }

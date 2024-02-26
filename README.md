@@ -72,10 +72,10 @@ A context was added as the second parameter, for structs this is the object bein
 import "github.com/asaskevich/govalidator"
 
 // old signature
-func(i interface{}) bool
+func(i any) bool
 
 // new signature
-func(i interface{}, o interface{}) bool
+func(i any, o any) bool
 ```
 
 ##### Adding a custom validator
@@ -84,12 +84,12 @@ This was changed to prevent data races when accessing custom validators.
 import "github.com/asaskevich/govalidator"
 
 // before
-govalidator.CustomTypeTagMap["customByteArrayValidator"] = func(i interface{}, o interface{}) bool {
+govalidator.CustomTypeTagMap["customByteArrayValidator"] = func(i any, o any) bool {
   // ...
 }
 
 // after
-govalidator.CustomTypeTagMap.Set("customByteArrayValidator", func(i interface{}, o interface{}) bool {
+govalidator.CustomTypeTagMap.Set("customByteArrayValidator", func(i any, o any) bool {
   // ...
 })
 ```
@@ -101,22 +101,22 @@ func BlackList(str, chars string) string
 func ByteLength(str string, params ...string) bool
 func CamelCaseToUnderscore(str string) string
 func Contains(str, substring string) bool
-func Count(array []interface{}, iterator ConditionIterator) int
-func Each(array []interface{}, iterator Iterator)
+func Count(array []any, iterator ConditionIterator) int
+func Each(array []any, iterator Iterator)
 func ErrorByField(e error, field string) string
 func ErrorsByField(e error) map[string]string
-func Filter(array []interface{}, iterator ConditionIterator) []interface{}
-func Find(array []interface{}, iterator ConditionIterator) interface{}
+func Filter(array []any, iterator ConditionIterator) []any
+func Find(array []any, iterator ConditionIterator) any
 func GetLine(s string, index int) (string, error)
 func GetLines(s string) []string
 func HasLowerCase(str string) bool
 func HasUpperCase(str string) bool
 func HasWhitespace(str string) bool
 func HasWhitespaceOnly(str string) bool
-func InRange(value interface{}, left interface{}, right interface{}) bool
+func InRange(value any, left any, right any) bool
 func InRangeFloat32(value, left, right float32) bool
 func InRangeFloat64(value, left, right float64) bool
-func InRangeInt(value, left, right interface{}) bool
+func InRangeInt(value, left, right any) bool
 func IsASCII(str string) bool
 func IsAlpha(str string) bool
 func IsAlphanumeric(str string) bool
@@ -194,7 +194,7 @@ func IsTiger128(str string) bool
 func IsTiger160(str string) bool
 func IsTiger192(str string) bool
 func IsTime(str string, format string) bool
-func IsType(v interface{}, params ...string) bool
+func IsType(v any, params ...string) bool
 func IsURL(str string) bool
 func IsUTFDigit(str string) bool
 func IsUTFLetter(str string) bool
@@ -210,7 +210,7 @@ func IsUpperCase(str string) bool
 func IsVariableWidth(str string) bool
 func IsWhole(value float64) bool
 func LeftTrim(str, chars string) string
-func Map(array []interface{}, iterator ResultIterator) []interface{}
+func Map(array []any, iterator ResultIterator) []any
 func Matches(str, pattern string) bool
 func MaxStringLength(str string, params ...string) bool
 func MinStringLength(str string, params ...string) bool
@@ -234,15 +234,15 @@ func StringMatches(s string, params ...string) bool
 func StripLow(str string, keepNewLines bool) string
 func ToBoolean(str string) (bool, error)
 func ToFloat(str string) (float64, error)
-func ToInt(value interface{}) (res int64, err error)
-func ToJSON(obj interface{}) (string, error)
-func ToString(obj interface{}) string
+func ToInt(value any) (res int64, err error)
+func ToJSON(obj any) (string, error)
+func ToString(obj any) string
 func Trim(str, chars string) string
 func Truncate(str string, length int, ending string) string
-func TruncatingErrorf(str string, args ...interface{}) error
+func TruncatingErrorf(str string, args ...any) error
 func UnderscoreToCamelCase(s string) string
-func ValidateMap(inputMap map[string]interface{}, validationMap map[string]interface{}) (bool, error)
-func ValidateStruct(s interface{}) (bool, error)
+func ValidateMap(inputMap map[string]any, validationMap map[string]any) (bool, error)
+func ValidateStruct(s any) (bool, error)
 func WhiteList(str, chars string) string
 type ConditionIterator
 type CustomTypeValidator
@@ -280,7 +280,7 @@ IsType can be used through the tag `type` which is essential for map validation:
 type User	struct {
   Name string      `valid:"type(string)"`
   Age  int         `valid:"type(int)"`
-  Meta interface{} `valid:"type(string)"`
+  Meta any `valid:"type(string)"`
 }
 result, err := govalidator.ValidateStruct(User{"Bob", 20, "meta"})
 if err != nil {
@@ -301,25 +301,25 @@ println(str)
 ###### Each, Map, Filter, Count for slices
 Each iterates over the slice/array and calls Iterator for every item
 ```go
-data := []interface{}{1, 2, 3, 4, 5}
-var fn govalidator.Iterator = func(value interface{}, index int) {
+data := []any{1, 2, 3, 4, 5}
+var fn govalidator.Iterator = func(value any, index int) {
 	println(value.(int))
 }
 govalidator.Each(data, fn)
 ```
 ```go
-data := []interface{}{1, 2, 3, 4, 5}
-var fn govalidator.ResultIterator = func(value interface{}, index int) interface{} {
+data := []any{1, 2, 3, 4, 5}
+var fn govalidator.ResultIterator = func(value any, index int) any {
 	return value.(int) * 3
 }
-_ = govalidator.Map(data, fn) // result = []interface{}{1, 6, 9, 12, 15}
+_ = govalidator.Map(data, fn) // result = []any{1, 6, 9, 12, 15}
 ```
 ```go
-data := []interface{}{1, 2, 3, 4, 5, 6, 7, 8, 9, 10}
-var fn govalidator.ConditionIterator = func(value interface{}, index int) bool {
+data := []any{1, 2, 3, 4, 5, 6, 7, 8, 9, 10}
+var fn govalidator.ConditionIterator = func(value any, index int) bool {
 	return value.(int)%2 == 0
 }
-_ = govalidator.Filter(data, fn) // result = []interface{}{2, 4, 6, 8, 10}
+_ = govalidator.Filter(data, fn) // result = []any{2, 4, 6, 8, 10}
 _ = govalidator.Count(data, fn) // result = 5
 ```
 ###### ValidateStruct [#2](https://github.com/asaskevich/govalidator/pull/2)
@@ -440,27 +440,27 @@ if err != nil {
 println(result)
 ```
 ###### ValidateMap [#2](https://github.com/asaskevich/govalidator/pull/338)
-If you want to validate maps, you can use the map to be validated and a validation map that contain the same tags used in ValidateStruct, both maps have to be in the form `map[string]interface{}`
+If you want to validate maps, you can use the map to be validated and a validation map that contain the same tags used in ValidateStruct, both maps have to be in the form `map[string]any`
 
 So here is small example of usage:
 ```go
-var mapTemplate = map[string]interface{}{
+var mapTemplate = map[string]any{
 	"name":"required,alpha",
 	"family":"required,alpha",
 	"email":"required,email",
 	"cell-phone":"numeric",
-	"address":map[string]interface{}{
+	"address":map[string]any{
 		"line1":"required,alphanum",
 		"line2":"alphanum",
 		"postal-code":"numeric",
 	},
 }
 
-var inputMap = map[string]interface{}{
+var inputMap = map[string]any{
 	"name":"Bob",
 	"family":"Smith",
 	"email":"foo@bar.baz",
-	"address":map[string]interface{}{
+	"address":map[string]any{
 		"line1":"",
 		"line2":"",
 		"postal-code":"",
@@ -493,7 +493,7 @@ type StructWithCustomByteArray struct {
   CustomMinLength int             `valid:"-"`
 }
 
-govalidator.CustomTypeTagMap.Set("customByteArrayValidator", func(i interface{}, context interface{}) bool {
+govalidator.CustomTypeTagMap.Set("customByteArrayValidator", func(i any, context any) bool {
   switch v := context.(type) { // you can type switch on the context interface being validated
   case StructWithCustomByteArray:
     // you can check and validate against some other field in the context,
@@ -514,7 +514,7 @@ govalidator.CustomTypeTagMap.Set("customByteArrayValidator", func(i interface{},
   }
   return false
 })
-govalidator.CustomTypeTagMap.Set("customMinLengthValidator", func(i interface{}, context interface{}) bool {
+govalidator.CustomTypeTagMap.Set("customMinLengthValidator", func(i any, context any) bool {
   switch v := context.(type) { // this validates a field against the value in another field, i.e. dependent validation
   case StructWithCustomByteArray:
     return len(v.ID) >= v.CustomMinLength
