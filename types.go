@@ -664,6 +664,7 @@ var ISO693List = []ISO693Entry{
 }
 
 type CustomValidatorParam interface {
+	GetValidator() string
 	GetField() string
 	GetValue() any
 	GetParent() any
@@ -671,14 +672,15 @@ type CustomValidatorParam interface {
 }
 
 type ValidatorParams struct {
-	Field  string
-	Value  any
-	Parent any
-	Tag    reflect.StructTag
+	Validator string
+	Field     string
+	Value     any
+	Parent    any
+	Tag       reflect.StructTag
 }
 
-func NewValidatorParams(field string, value any, parent any, tag reflect.StructTag) *ValidatorParams {
-	return &ValidatorParams{Field: field, Value: value, Parent: parent, Tag: tag}
+func NewValidatorParams(validator string, field string, value any, parent any, tag reflect.StructTag) *ValidatorParams {
+	return &ValidatorParams{Validator: validator, Field: field, Value: value, Parent: parent, Tag: tag}
 }
 
 func (v ValidatorParams) GetField() string {
@@ -697,13 +699,18 @@ func (v ValidatorParams) GetTag() reflect.StructTag {
 	return v.Tag
 }
 
+func (v ValidatorParams) GetValidator() string {
+	return v.Validator
+}
+
 var _ CustomValidatorParam = (*GenericValidatorParams[string, string])(nil)
 
 type GenericValidatorParams[V, P any] struct {
-	Field  string
-	Value  V
-	Parent P
-	Tag    reflect.StructTag
+	Validator string
+	Field     string
+	Value     V
+	Parent    P
+	Tag       reflect.StructTag
 }
 
 func (c GenericValidatorParams[V, P]) GetField() string {
@@ -722,8 +729,12 @@ func (c GenericValidatorParams[V, P]) GetTag() reflect.StructTag {
 	return c.Tag
 }
 
-func NewGenericValidatorParams[V, P any](field string, value V, parent P, tag reflect.StructTag) *GenericValidatorParams[V, P] {
-	return &GenericValidatorParams[V, P]{Field: field, Value: value, Parent: parent, Tag: tag}
+func (c GenericValidatorParams[V, P]) GetValidator() string {
+	return c.Validator
+}
+
+func NewGenericValidatorParams[V, P any](validator string, field string, value V, parent P, tag reflect.StructTag) *GenericValidatorParams[V, P] {
+	return &GenericValidatorParams[V, P]{Validator: validator, Field: field, Value: value, Parent: parent, Tag: tag}
 }
 
 type GenericValidator[T, P any] struct {
@@ -741,7 +752,7 @@ func NewGenericValidator[V, P any](validator CustomGenericValidator[V, P]) Custo
 			return false, fmt.Errorf("validation parameter parent type is not compatible with the generic validator of type %T", *new(P))
 		}
 
-		param := NewGenericValidatorParams[V, P](params.GetField(), value, parent, params.GetTag())
+		param := NewGenericValidatorParams[V, P](params.GetValidator(), params.GetField(), value, parent, params.GetTag())
 		return validator(ctx, param)
 	}
 }
