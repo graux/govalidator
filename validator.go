@@ -1490,7 +1490,7 @@ func typeCheck(ctx context.Context, v reflect.Value, t reflect.StructField, o re
 		if validatorFunc, ok := CustomTypeTagMap.Get(validatorName); ok {
 			delete(options, validatorName)
 
-			result, err := validatorFunc(ctx, NewValidatorParams(t.Name, value, parent))
+			result, err := validatorFunc(ctx, NewValidatorParams(t.Name, value, parent, t.Tag))
 			if err != nil {
 				return false, err
 			}
