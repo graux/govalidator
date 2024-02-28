@@ -1,6 +1,7 @@
 package govalidator
 
 import (
+	"fmt"
 	"reflect"
 	"sort"
 	"strings"
@@ -46,6 +47,12 @@ func WithTag(tag reflect.StructTag) ErrOpt {
 	}
 }
 
+func WithCode(code string) ErrOpt {
+	return func(err *Error) {
+		err.Code = code
+	}
+}
+
 func NewError(name string, err error, validator string, value *string, opts ...ErrOpt) Error {
 	newErr := &Error{
 		Name:                     name,
@@ -58,6 +65,9 @@ func NewError(name string, err error, validator string, value *string, opts ...E
 	}
 	for _, opt := range opts {
 		opt(newErr)
+	}
+	if len(newErr.Code) == 0 {
+		newErr.Code = strings.ToLower(fmt.Sprintf("%s_%s", newErr.Name, newErr.Validator))
 	}
 	return *newErr
 }
@@ -73,6 +83,7 @@ type Error struct {
 	Path      []string
 	JsonKey   *string
 	Value     *string
+	Code      string
 }
 
 func (e Error) Error() string {
