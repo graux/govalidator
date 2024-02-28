@@ -1087,9 +1087,9 @@ func ValidateMapExtra(ctx context.Context, s map[string]any, m map[string]any, e
 				if _, ok := s[key]; !ok {
 					requiredResult = false
 					if required.customErrorMessage != "" {
-						err = Error{key, fmt.Errorf(required.customErrorMessage), true, "required", []string{}}
+						err = NewError(key, fmt.Errorf(required.customErrorMessage), "required", nil, WithCustomErrMessage(true))
 					} else {
-						err = Error{key, fmt.Errorf("required field missing"), false, "required", []string{}}
+						err = NewError(key, fmt.Errorf("required field missing"), "required", nil)
 					}
 					errs = append(errs, err)
 				}
@@ -1431,13 +1431,14 @@ func checkRequired(v reflect.Value, t reflect.StructField, options tagOptionsMap
 		}
 	}
 
+	value := ""
 	if requiredOption, isRequired := options["required"]; isRequired {
 		if len(requiredOption.customErrorMessage) > 0 {
-			return false, Error{t.Name, fmt.Errorf(requiredOption.customErrorMessage), true, "required", []string{}}
+			return false, NewError(t.Name, fmt.Errorf(requiredOption.customErrorMessage), "required", &value, WithCustomErrMessage(true), WithTag(t.Tag))
 		}
-		return false, Error{t.Name, fmt.Errorf("non zero value required"), false, "required", []string{}}
+		return false, NewError(t.Name, fmt.Errorf("non zero value required"), "required", &value, WithTag(t.Tag))
 	} else if _, isOptional := options["optional"]; fieldsRequiredByDefault && !isOptional {
-		return false, Error{t.Name, fmt.Errorf("Missing required field"), false, "required", []string{}}
+		return false, NewError(t.Name, fmt.Errorf("Missing required field"), "required", &value, WithTag(t.Tag))
 	}
 	// not required and empty is valid
 	return true, nil
@@ -1457,7 +1458,7 @@ func typeCheck(ctx context.Context, v reflect.Value, t reflect.StructField, o re
 			if !fieldsRequiredByDefault {
 				return true, nil
 			}
-			return false, Error{t.Name, fmt.Errorf("All fields are required to at least have one validation defined"), false, "required", []string{}}
+			return false, NewError(t.Name, fmt.Errorf("All fields are required to at least have one validation defined"), "required", &tag, WithTag(t.Tag))
 		}
 	case "-":
 		return true, nil
@@ -1480,13 +1481,14 @@ func typeCheck(ctx context.Context, v reflect.Value, t reflect.StructField, o re
 
 	var customTypeErrors Errors
 	optionsOrder := options.orderedKeys()
+
+	value := v.Interface()
+	parent := o.Interface()
+
 	for _, validatorName := range optionsOrder {
 		validatorStruct := options[validatorName]
 		if validatorFunc, ok := CustomTypeTagMap.Get(validatorName); ok {
 			delete(options, validatorName)
-
-			value := v.Interface()
-			parent := o.Interface()
 
 			result, err := validatorFunc(ctx, NewValidatorParams(t.Name, value, parent))
 			if err != nil {
@@ -1516,8 +1518,8 @@ func typeCheck(ctx context.Context, v reflect.Value, t reflect.StructField, o re
 				optionsOrder := options.orderedKeys()
 				for _, validator := range optionsOrder {
 					isValid = false
-					resultErr = Error{t.Name, fmt.Errorf(
-						"The following validator is invalid or can't be applied to the field: %q", validator), false, stripParams(validator), []string{}}
+					valStr := fmt.Sprintf("%v", value)
+					resultErr = NewError(t.Name, fmt.Errorf("The following validator is invalid or can't be applied to the field: %q", validator), stripParams(validator), &valStr, WithTag(t.Tag))
 					return
 				}
 			}
@@ -1553,12 +1555,12 @@ func typeCheck(ctx context.Context, v reflect.Value, t reflect.StructField, o re
 			field := fmt.Sprint(v)
 			if result := validatefunc(v.Interface(), ps[1:]...); (!result && !negate) || (result && negate) {
 				if customMsgExists {
-					return false, Error{t.Name, TruncatingErrorf(validatorStruct.customErrorMessage, field, validator), customMsgExists, stripParams(validatorSpec), []string{}}
+					return false, NewError(t.Name, TruncatingErrorf(validatorStruct.customErrorMessage, field, validator), stripParams(validatorSpec), &field, WithCustomErrMessage(customMsgExists), WithTag(t.Tag))
 				}
 				if negate {
-					return false, Error{t.Name, fmt.Errorf("%s does validate as %s", field, validator), customMsgExists, stripParams(validatorSpec), []string{}}
+					return false, NewError(t.Name, fmt.Errorf("%s does validate as %s", field, validator), stripParams(validatorSpec), &field, WithCustomErrMessage(customMsgExists), WithTag(t.Tag))
 				}
-				return false, Error{t.Name, fmt.Errorf("%s does not validate as %s", field, validator), customMsgExists, stripParams(validatorSpec), []string{}}
+				return false, NewError(t.Name, fmt.Errorf("%s does not validate as %s", field, validator), stripParams(validatorSpec), &field, WithCustomErrMessage(customMsgExists), WithTag(t.Tag))
 			}
 		}
 	}
@@ -1595,26 +1597,25 @@ func typeCheck(ctx context.Context, v reflect.Value, t reflect.StructField, o re
 				}
 
 				delete(options, validatorSpec)
-
+				field := fmt.Sprint(v) // make value into string, then validate with regex
 				switch v.Kind() {
 				case reflect.String,
 					reflect.Int, reflect.Int8, reflect.Int16, reflect.Int32, reflect.Int64,
 					reflect.Uint, reflect.Uint8, reflect.Uint16, reflect.Uint32, reflect.Uint64,
 					reflect.Float32, reflect.Float64:
 
-					field := fmt.Sprint(v) // make value into string, then validate with regex
 					if result := validatefunc(field, ps[1:]...); (!result && !negate) || (result && negate) {
 						if customMsgExists {
-							return false, Error{t.Name, TruncatingErrorf(validatorStruct.customErrorMessage, field, validator), customMsgExists, stripParams(validatorSpec), []string{}}
+							return false, NewError(t.Name, TruncatingErrorf(validatorStruct.customErrorMessage, field, validator), stripParams(validatorSpec), &field, WithCustomErrMessage(customMsgExists), WithTag(t.Tag))
 						}
 						if negate {
-							return false, Error{t.Name, fmt.Errorf("%s does validate as %s", field, validator), customMsgExists, stripParams(validatorSpec), []string{}}
+							return false, NewError(t.Name, fmt.Errorf("%s does validate as %s", field, validator), stripParams(validatorSpec), &field, WithCustomErrMessage(customMsgExists), WithTag(t.Tag))
 						}
-						return false, Error{t.Name, fmt.Errorf("%s does not validate as %s", field, validator), customMsgExists, stripParams(validatorSpec), []string{}}
+						return false, NewError(t.Name, fmt.Errorf("%s does not validate as %s", field, validator), stripParams(validatorSpec), &field, WithCustomErrMessage(customMsgExists), WithTag(t.Tag))
 					}
 				default:
 					// type not yet supported, fail
-					return false, Error{t.Name, fmt.Errorf("Validator %s doesn't support kind %s", validator, v.Kind()), false, stripParams(validatorSpec), []string{}}
+					return false, NewError(t.Name, fmt.Errorf("Validator %s doesn't support kind %s", validator, v.Kind()), stripParams(validatorSpec), &field, WithTag(t.Tag))
 				}
 			}
 
@@ -1627,19 +1628,21 @@ func typeCheck(ctx context.Context, v reflect.Value, t reflect.StructField, o re
 					reflect.Uint, reflect.Uint8, reflect.Uint16, reflect.Uint32, reflect.Uint64,
 					reflect.Float32, reflect.Float64:
 					field := fmt.Sprint(v) // make value into string, then validate with regex
+					valName := stripParams(validatorSpec)
 					if result := validatefunc(field); !result && !negate || result && negate {
 						if customMsgExists {
-							return false, Error{t.Name, TruncatingErrorf(validatorStruct.customErrorMessage, field, validator), customMsgExists, stripParams(validatorSpec), []string{}}
+							return false, NewError(t.Name, TruncatingErrorf(validatorStruct.customErrorMessage, field, validator), valName, &field, WithCustomErrMessage(customMsgExists), WithTag(t.Tag))
 						}
 						if negate {
-							return false, Error{t.Name, fmt.Errorf("%s does validate as %s", field, validator), customMsgExists, stripParams(validatorSpec), []string{}}
+							return false, NewError(t.Name, fmt.Errorf("%s does validate as %s", field, validator), valName, &field, WithCustomErrMessage(customMsgExists), WithTag(t.Tag))
 						}
-						return false, Error{t.Name, fmt.Errorf("%s does not validate as %s", field, validator), customMsgExists, stripParams(validatorSpec), []string{}}
+						return false, NewError(t.Name, fmt.Errorf("%s does not validate as %s", field, validator), valName, &field, WithCustomErrMessage(customMsgExists), WithTag(t.Tag))
 					}
 				default:
 					// Not Yet Supported Types (Fail here!)
-					err := fmt.Errorf("Validator %s doesn't support kind %s for value %v", validator, v.Kind(), v)
-					return false, Error{t.Name, err, false, stripParams(validatorSpec), []string{}}
+					field := fmt.Sprintf("%v", v)
+					err := fmt.Errorf("Validator %s doesn't support kind %s for value %s", validator, v.Kind(), field)
+					return false, NewError(t.Name, err, stripParams(validatorSpec), &field, WithTag(t.Tag))
 				}
 			}
 		}

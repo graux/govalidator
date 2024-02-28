@@ -3333,7 +3333,7 @@ func TestErrorsByField(t *testing.T) {
 		{"CustomField", "An error occurred"},
 	}
 
-	err = Error{"CustomField", fmt.Errorf("An error occurred"), false, "hello", []string{}}
+	err = NewError("CustomField", fmt.Errorf("An error occurred"), "hello", nil)
 	errs = ErrorsByField(err)
 
 	if len(errs) != 1 {
